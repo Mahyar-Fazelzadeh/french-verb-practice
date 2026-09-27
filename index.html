@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>French Verb Practice</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="data.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow" lang="fr">Un peu de français, chaque jour</p>
+      <h1>French Verb Practice</h1>
+      <p>Practise French conjugations, one verb at a time.</p>
+
+      <section id="settings-screen" aria-labelledby="settings-heading">
+        <h2 id="settings-heading">Practice settings</h2>
+        <p>Choose at least one tense and one verb for a session of up to 10 exercises.</p>
+        <p class="hint">Verbs are shuffled with no repeats. Each exercise uses one of your selected tenses: six subjects, three for the imperative, or just il for impersonal verbs. Unavailable verb/tense combinations are skipped.</p>
+        <form id="settings-form">
+          <fieldset>
+            <legend>Tenses</legend>
+            <div id="tense-options"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Verbs</legend>
+            <p class="hint">Group checkboxes select or clear the entire group, including hidden verbs. Search and topic filters only change what you see; hidden selections remain selected.</p>
+            <div class="verb-filters">
+              <label for="verb-search">Search verbs<input id="verb-search" type="search" placeholder="e.g. être, prendre, se…"></label>
+              <label for="topic-filter">Topic<select id="topic-filter"><option value="">All topics</option></select></label>
+            </div>
+            <div class="actions">
+              <button id="select-shown" class="secondary" type="button">Select shown</button>
+              <button id="clear-shown" class="secondary" type="button">Clear shown</button>
+              <button id="clear-all" class="secondary" type="button">Clear all verbs</button>
+            </div>
+            <p id="selection-status" role="status"></p>
+            <div id="verb-options"></div>
+          </fieldset>
+          <button type="submit">Start Practice</button>
+          <p id="settings-error" role="alert"></p>
+        </form>
+        <noscript>Please enable JavaScript in your browser to use this app.</noscript>
+      </section>
+
+      <section id="practice-screen" aria-labelledby="exercise-heading" hidden>
+        <p id="exercise-progress"></p>
+        <h2 id="exercise-heading" tabindex="-1" lang="fr"></h2>
+        <p id="answer-instructions">Type the verb form only, without the subject. Include the auxiliary for compound tenses (for example, ai parlé).</p>
+        <p id="verb-note" class="hint"></p>
+        <p class="hint">Accents and spelling matter. Capitalization and spaces at the beginning or end are ignored.</p>
+        <form id="answer-form">
+          <div id="answer-fields"></div>
+          <p id="answer-summary" role="status" tabindex="-1"></p>
+          <div class="actions">
+            <button id="check-answers" type="submit">Check Answers</button>
+            <button id="try-again" type="button" hidden>Try Again</button>
+            <button id="next-question" type="button" hidden>Next Question</button>
+            <button id="leave-practice" class="secondary" type="button">Back to settings</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="complete-screen" aria-labelledby="complete-heading" hidden>
+        <h2 id="complete-heading" tabindex="-1">Session complete</h2>
+        <p id="session-results"></p>
+        <ul>
+          <li>✓ Correct answers: <strong id="correct-total"></strong></li>
+          <li>✗ Incorrect answers: <strong id="incorrect-total"></strong></li>
+        </ul>
+        <p class="hint">Each subject counts as one answer. Results use your latest checked attempt for each exercise; blank answers count as incorrect.</p>
+        <button id="return-settings" type="button">Back to settings</button>
+      </section>
+
+      <footer>Works offline. Session progress is not saved when you close or refresh the page.</footer>
+    </main>
+  </body>
+</html>
