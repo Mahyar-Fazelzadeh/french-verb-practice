@@ -12,6 +12,16 @@ const data = vm.runInNewContext(`${dataSource}; conjugationData`);
 assert.equal(Object.keys(data.tenses).length, 11);
 assert.ok(data.verbs.length >= 200);
 assert.equal(new Set(data.verbs.map((v) => v.infinitive)).size, data.verbs.length);
+assert.equal(data.levels.length, 10);
+const levelNames = data.levels.flatMap((level) => level.verbs);
+assert.equal(levelNames.length, 235);
+assert.equal(new Set(levelNames).size, 235);
+assert.ok(levelNames.every((name) => data.verbs.some((verb) => verb.infinitive === name)));
+for (const level of data.levels) {
+  assert.ok([23, 24].includes(level.verbs.length));
+  assert.equal(data.verbs.filter((verb) => verb.level === level.id).length, level.verbs.length);
+  assert.ok(level.verbs.every((name) => data.verbs.find((verb) => verb.infinitive === name).level === level.id));
+}
 let formCount = 0;
 for (const verb of data.verbs) {
   assert.ok(data.categories[verb.category], verb.infinitive);
@@ -75,7 +85,9 @@ class Element {
   setAttribute(name, value) { this.attributes[name] = value; }
   addEventListener(type, fn) { this.listeners[type] = fn; }
   fire(type) { this.listeners[type]?.({ preventDefault() {} }); if (type === "change") this.parentElement?.fire(type); }
-  focus() {}
+  dispatchEvent(event) { this.fire(event.type); }
+  focus() { this.focused = true; }
+  setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; }
   closest() { let node = this; while (node && node.className !== "answer-row") node = node.parentElement; return node; }
   querySelectorAll(selector) { return this.children.flatMap((child) => [...(child.tag === selector ? [child] : []), ...child.querySelectorAll(selector)]); }
   querySelector(selector) { return this.querySelectorAll(selector === 'button[type="submit"]' ? "button" : selector)[0]; }
@@ -83,14 +95,50 @@ class Element {
 for (const match of html.matchAll(/id="([^"]+)"/g)) { const node = new Element(); node.id = match[1]; }
 const node = (id) => nodes.get(id);
 const settings = node("settings-form");
+assert.ok(html.includes('<option value="5" selected>5</option>'));
+node("exercise-count").value = "5"; // Simulate the HTML-selected option.
 settings.append(node("tense-options"), node("verb-options"), new Element("button"));
 const context = vm.createContext({
+  Event: class { constructor(type) { this.type = type; } },
   document: { getElementById: node, createElement: (tag) => new Element(tag), createTextNode: (text) => { const n = new Element("text"); n.textContent = text; return n; } },
   FormData: class { constructor(form) { this.form = form; } getAll(name) { return this.form.querySelectorAll("input").filter((input) => input.name === name && input.checked).map((input) => input.value); } },
 });
 vm.runInContext(dataSource + "\n" + appSource, context);
 const run = (code) => vm.runInContext(code, context);
 assert.equal(settings.querySelectorAll("input").filter((i) => i.name === "verb").length, data.verbs.length);
+assert.equal(node("practice-level").value, "1");
+assert.equal(run("verbChoices.filter(({checkbox}) => !checkbox.parentElement.hidden).length"), 24);
+settings.fire("submit");
+assert.equal(run("session.exercises.length"), 5);
+assert.ok(run("session.exercises.every(e => e.verb.level === 1)"));
+node("leave-practice").fire("click");
+// Every level and each session size must stay within the chosen level.
+for (const level of data.levels) {
+  node("practice-level").value = String(level.id); node("practice-level").fire("change");
+  for (const length of [3, 5, 10]) {
+    node("exercise-count").value = String(length);
+    settings.fire("submit");
+    assert.equal(run("session.exercises.length"), length);
+    assert.ok(run(`session.exercises.every(e => e.verb.level === ${level.id})`));
+    assert.equal(run("new Set(session.exercises.map(e => e.verb.infinitive)).size"), length);
+    node("leave-practice").fire("click");
+  }
+}
+node("clear-all").fire("click");
+node("practice-level").value = "1"; node("practice-level").fire("change");
+run("verbGroups[0].toggle.checked = true; verbGroups[0].toggle.fire('change')");
+assert.ok(run("verbChoices.filter(({checkbox}) => checkbox.checked).every(({verb}) => verb.level === 1 && verb.category === 'er')"));
+node("practice-level").value = "2"; node("practice-level").fire("change");
+settings.fire("submit");
+assert.ok(node("settings-error").textContent.includes("chosen level"));
+// A shorter eligible pool must not be padded with duplicates or outside verbs.
+node("select-shown").fire("click");
+run("verbChoices.forEach(({checkbox,verb}) => { checkbox.checked = ['laver','porter'].includes(verb.infinitive); })");
+settings.fire("submit");
+assert.equal(run("session.exercises.length"), 2);
+node("leave-practice").fire("click");
+node("practice-level").value = ""; node("practice-level").fire("change");
+node("exercise-count").value = "5";
 node("clear-all").fire("click");
 node("verb-search").value = "etre"; node("verb-search").fire("input");
 assert.equal(run("verbChoices.filter(({checkbox}) => !checkbox.parentElement.hidden).length"), 1);
@@ -144,4 +192,52 @@ node("answer-form").fire("submit");
 assert.equal(run("session.exercises[0].correctCount"), 2);
 assert.equal(run("normalizeAnswer('etais') === normalizeAnswer('étais')"), false);
 assert.equal(run("normalizeAnswer('e\\u0301tais') === normalizeAnswer('étais')"), true);
-console.log(`Passed: ${data.verbs.length} verbs, ${formCount} answer slots, ${cases.length} reference forms, filters, selection, random sessions, agreement, retries, and mixed-length scoring. Rendering is not covered.`);
+// Copy preserves the exact text, replaces only the next field, and never submits.
+run("startSession({verbs:['parler'],tenseIds:['present'],exerciseCount:5})");
+let copies = node("answer-fields").querySelectorAll("button");
+assert.equal(copies.length, 5); // No button after the last subject.
+assert.ok(copies.every((button) => button.disabled && button.type === "button"));
+node("answer-1").value = "existing answer";
+copies[0].fire("click");
+assert.equal(node("answer-1").value, "existing answer"); // Empty source is a no-op.
+node("answer-0").value = "parle"; node("answer-0").fire("input");
+assert.equal(copies[0].disabled, false);
+copies[0].fire("click");
+assert.equal(node("answer-0").value, "parle");
+assert.equal(node("answer-1").value, "parle");
+assert.equal(node("answer-2").value, "");
+assert.ok(node("answer-1").focused);
+assert.equal(node("answer-1").selectionStart, 5);
+assert.equal(copies[1].disabled, false); // Can copy onward without typing again.
+assert.equal(run("session.checked"), false);
+node("answer-1").value = "parles"; node("answer-1").fire("input");
+copies[1].fire("click");
+assert.equal(node("answer-2").value, "parles");
+node("answer-form").fire("submit");
+assert.ok(copies.every((button) => button.hidden && button.disabled));
+node("answer-0").value = "changed"; copies[0].fire("click");
+assert.equal(node("answer-1").value, "parles");
+node("try-again").fire("click");
+copies = node("answer-fields").querySelectorAll("button");
+assert.equal(copies.length, 5);
+assert.ok(copies.every((button) => !button.hidden && button.disabled));
+node("answer-0").value = "m’étais levée"; node("answer-0").fire("input"); copies[0].fire("click");
+assert.equal(node("answer-1").value, "m’étais levée");
+run("startSession({verbs:['aller'],tenseIds:['imperatif'],exerciseCount:3})");
+assert.equal(node("answer-fields").querySelectorAll("button").length, 2);
+run("startSession({verbs:['falloir'],tenseIds:['present'],exerciseCount:3})");
+assert.equal(node("answer-fields").querySelectorAll("button").length, 0);
+// Enter navigates fields without submitting, including 3- and 1-field exercises.
+for (const [verb, tense, length] of [['parler', 'present', 6], ['aller', 'imperatif', 3], ['falloir', 'present', 1]]) {
+  run(`startSession({verbs:[${JSON.stringify(verb)}],tenseIds:[${JSON.stringify(tense)}],exerciseCount:3})`);
+  for (let i = 0; i < length; i++) {
+    const target = i < length - 1 ? node(`answer-${i + 1}`) : node('check-answers');
+    target.focused = false;
+    let prevented = false;
+    node(`answer-${i}`).listeners.keydown({ key: 'Enter', preventDefault() { prevented = true; } });
+    assert.ok(prevented);
+    assert.ok(target.focused);
+    assert.equal(run('session.checked'), false);
+  }
+}
+console.log(`Passed: ${data.verbs.length} verbs in 10 balanced levels, 3/5/10-question sessions, ${formCount} answer slots, ${cases.length} reference forms, filters, selection, random sessions, agreement, retries, mixed-length scoring, copy-to-next, and Enter navigation. Rendering is not covered.`);

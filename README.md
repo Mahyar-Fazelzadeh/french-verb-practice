@@ -4,15 +4,34 @@ Open `index.html` in a modern browser. No installation, server, or internet conn
 
 ## How to practise
 
-1. Select at least one tense and one verb. Five group checkboxes select or clear regular -er, regular -ir, regular -re, irregular, and pronominal verbs. Individual choices are also available. Groups are practical practice categories, not a replacement for the traditional three French verb groups.
-2. Search or filter by topic to find verbs. Filters do not change selection. **Select shown** and **Clear shown** affect visible verbs; **Clear all verbs** clears everything. A group checkbox always affects its entire group, including hidden verbs. To practise only one topic, clear all, choose the topic, then select shown.
-3. Click **Start Practice** for up to 10 exercises using only your selections. Verbs are shuffled with no repeats. Fewer eligible verbs give a shorter session. Only available tenses are used: pouvoir, falloir, and pleuvoir have no imperative in the dataset.
+1. Choose a practice level (Level 1 by default) or All levels, and a session length of **3, 5, or 10 questions** (default **5**). A question means one verb with its subject fields. Select at least one tense and one verb. The regular -er, regular -ir, regular -re, irregular, and pronominal group checkboxes affect verbs within the chosen level.
+2. Search or filter by topic to find verbs within the level. These display filters do not change selection. **Select shown** and **Clear shown** affect visible verbs; **Clear all verbs** clears every level. Group checkboxes include search/topic-hidden verbs within the chosen level. To practise only one topic, clear all, choose the topic, then select shown. Selections in other levels are remembered while the page remains open, but cannot appear unless that level (or All levels) is chosen.
+3. Click **Start Practice** for the chosen session length using only selected verbs from the chosen level. Verbs are shuffled with no repeats. Fewer eligible verbs give a shorter session. Only available tenses are used: pouvoir, falloir, and pleuvoir have no imperative in the dataset.
 4. Enter verb forms without subject pronouns or `que/qu’`. Include auxiliaries and reflexive pronouns, such as `ai parlé`, `me suis levée`, or `lève-toi`. Ordinary exercises have six fields; imperative exercises have tu/nous/vous; impersonal verbs have only il.
-5. Click **Check Answers** (or press Enter in an answer field). Accents and spelling matter. Capitalization, surrounding whitespace, equivalent Unicode accents, and straight/curly apostrophes are normalized. Explicitly stored spelling variants are accepted; accents are never removed generally. Blank answers are incorrect.
+5. Press **Enter** in an answer field to move to the next subject without copying or checking. Enter on the last subject focuses **Check Answers**; click it or press Enter again to check. Accents and spelling matter. Capitalization, surrounding whitespace, equivalent Unicode accents, and straight/curly apostrophes are normalized. Explicitly stored spelling variants are accepted; accents are never removed generally. Blank answers are incorrect.
 6. Review the feedback: green answer text and ✓, or red text followed by X and accepted corrections. **Try Again** clears the same exercise; **Next Question** advances. **Finish Session** shows correct/incorrect totals. Each displayed subject counts once, using the latest checked attempt. Retries replace the previous result. Totals account for mixed six-, three-, and one-field exercises.
 7. **Back to settings** ends the session and keeps your selections while the page remains open. Refreshing or closing the page resets everything.
 
+**Copy to next** beside an answer copies exactly what you typed into the next subject's field, replacing its contents and placing the cursor at the end. Adjust the ending or pronoun yourself; the button does not conjugate for you or use the system clipboard. Empty fields cannot be copied. There is no button on the final subject; buttons disappear after checking and return on Try Again.
+
 ## Scope and agreement
+
+The ten practice levels are a curated learning order, balancing familiarity, conjugation patterns, and vocabulary breadth. They are not CEFR classifications or a claim that every verb in a later level is harder. Essential irregulars such as être/avoir are intentionally introduced early. Tense difficulty is separate: choose Présent for an easier start. Levels are freely selectable with no automatic unlocking or progress storage.
+
+| Level | Focus | Verbs |
+| --- | --- | --- |
+| 1 | Essentials | 24 |
+| 2 | Everyday actions | 24 |
+| 3 | Regular -ir and -re | 24 |
+| 4 | Communication and plans | 24 |
+| 5 | Spelling and stem changes | 24 |
+| 6 | Core irregular families | 23 |
+| 7 | Reflexive routines | 23 |
+| 8 | More irregular families | 23 |
+| 9 | Abstract and professional verbs | 23 |
+| 10 | Advanced patterns and nuance | 23 |
+
+Every verb belongs to exactly one level. The complete, editable assignments are in the `levels` list in `data.js`; the existing verb-family and topic categories remain available.
 
 The local collection contains 235 verbs and 11 tense/mood choices, intended for practice through B2. It is a practical selection, not an exhaustive or officially prescribed CEFR verb inventory.
 
@@ -55,8 +74,10 @@ Check new derivatives carefully: prefixes can change the auxiliary, participle, 
 - Check `etais` versus `étais`, a blank answer, and a correct answer: feedback should distinguish them and retain what you typed.
 - Try Again should keep the exercise number, verb, and tense while clearing answers and feedback.
 - Check and advance through the session, verify the final correct/incorrect totals, then return and start a fresh session with no old results.
-- Select more than ten verbs: the session should contain ten different verbs in shuffled order. Try Again should not add an extra exercise or double-count answers.
+- Select more than ten verbs and choose 10 questions: the session should contain ten different verbs in shuffled order. Try Again should not add an extra exercise or double-count answers.
 - Select multiple tenses and verbs: questions must stay within the selection.
 - At a narrow browser width, check that inputs and feedback fit without horizontal scrolling. Use Tab and Enter to verify keyboard access.
 - Try se lever in the imperative (three fields), aller in passé composé (agreement variants), and falloir in the present (one field). Check final totals for each.
 - Filter/search and verify hidden selections remain selected. Try selecting only pouvoir plus imperative: the app should explain that this combination is unavailable.
+- Check the default Level 1 and 5-question session. Try 3 and 10 questions and another level: every generated verb must belong to that level. Choose All levels to practise the full collection. Deselect all verbs within the current level: selections in other levels must not bypass validation.
+- Enter parle for Je and click Copy to next: Tu receives parle and is focused for editing. Change it to parles and copy onward. Check that copying does not submit, buttons disappear after checking, and Try Again restores them. Imperative exercises have two copy buttons; impersonal exercises have none.

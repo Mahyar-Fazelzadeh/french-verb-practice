@@ -16,16 +16,25 @@
 
       <section id="settings-screen" aria-labelledby="settings-heading">
         <h2 id="settings-heading">Practice settings</h2>
-        <p>Choose at least one tense and one verb for a session of up to 10 exercises.</p>
+        <p>Choose a practice level, session length, and at least one tense and verb.</p>
         <p class="hint">Verbs are shuffled with no repeats. Each exercise uses one of your selected tenses: six subjects, three for the imperative, or just il for impersonal verbs. Unavailable verb/tense combinations are skipped.</p>
         <form id="settings-form">
+          <fieldset>
+            <legend>Session</legend>
+            <div class="verb-filters">
+              <label for="practice-level">Practice level<select id="practice-level" name="level"><option value="">All levels</option></select></label>
+              <label for="exercise-count">Questions per session<select id="exercise-count" name="exerciseCount"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option></select></label>
+            </div>
+            <p class="session-hint">A question is one verb with its subject fields. Only verbs from the chosen level can appear. Fewer eligible verbs means a shorter session without repeats.</p>
+            <p class="hint">These are practice levels, not CEFR grades. Start with Level 1 and move on when ready. Tenses are chosen separately; no levels are locked.</p>
+          </fieldset>
           <fieldset>
             <legend>Tenses</legend>
             <div id="tense-options"></div>
           </fieldset>
           <fieldset>
             <legend>Verbs</legend>
-            <p class="hint">Group checkboxes select or clear the entire group, including hidden verbs. Search and topic filters only change what you see; hidden selections remain selected.</p>
+            <p class="hint">Group checkboxes affect verbs in the chosen level, including those hidden by search or topic. Search and topic filters only change what you see; hidden selections within the level can still appear in practice.</p>
             <div class="verb-filters">
               <label for="verb-search">Search verbs<input id="verb-search" type="search" placeholder="e.g. être, prendre, se…"></label>
               <label for="topic-filter">Topic<select id="topic-filter"><option value="">All topics</option></select></label>
@@ -50,6 +59,7 @@
         <p id="answer-instructions">Type the verb form only, without the subject. Include the auxiliary for compound tenses (for example, ai parlé).</p>
         <p id="verb-note" class="hint"></p>
         <p class="hint">Accents and spelling matter. Capitalization and spaces at the beginning or end are ignored.</p>
+        <p class="hint">Copy to next replaces the next subject’s answer with your text. Edit it as needed for that subject.</p>
         <form id="answer-form">
           <div id="answer-fields"></div>
           <p id="answer-summary" role="status" tabindex="-1"></p>

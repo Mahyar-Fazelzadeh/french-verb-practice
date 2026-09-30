@@ -213,5 +213,22 @@ const conjugationData = (() => {
     verbs.push({ infinitive, category: "irregular", topics: [topic], impersonal: true, note: "Impersonal use: only il. No imperative.", conjugations: forms });
   }
   verbs.sort((a, b) => a.infinitive.localeCompare(b.infinitive, "fr"));
-  return { subjects, imperativeSubjects: ["Tu", "Nous", "Vous"], tenses, categories, topics, verbs };
+  // A hand-curated practice progression, not CEFR grades. Essential irregulars
+  // appear early; later levels broaden patterns, reflexives, and abstract usage.
+  // Explicit membership keeps levels stable when the list is sorted or edited.
+  const levels = [
+    ["Essentials", "être|avoir|aller|faire|parler|aimer|habiter|travailler|étudier|jouer|regarder|écouter|donner|demander|trouver|chercher|manger|boire|prendre|venir|vouloir|pouvoir|savoir|dire"],
+    ["Everyday actions", "préparer|cuisiner|laver|porter|fermer|laisser|aider|garder|dépêcher|allumer|couper|marcher|montrer|poser|voler|quitter|inviter|visiter|téléphoner|louer|tourner|traverser|rouler|rester"],
+    ["Regular -ir and -re", "finir|choisir|réussir|remplir|grandir|grossir|maigrir|vieillir|nourrir|punir|ralentir|rougir|obéir|guérir|réunir|vendre|attendre|entendre|répondre|perdre|rendre|défendre|dépendre|descendre"],
+    ["Communication and plans", "expliquer|présenter|organiser|participer|proposer|accepter|refuser|décider|discuter|contacter|remercier|confirmer|communiquer|tromper|prêter|noter|informer|apporter|réparer|réserver|souhaiter|terminer|utiliser|éviter"],
+    ["Spelling and stem changes", "acheter|appeler|rappeler|jeter|lever|nettoyer|payer|essayer|employer|envoyer|commencer|annoncer|partager|voyager|répéter|préférer|espérer|intéresser|créer|apprécier|penser|rêver|adorer|détester"],
+    ["Core irregular families", "voir|lire|écrire|mettre|dormir|partir|sortir|ouvrir|offrir|courir|vivre|suivre|connaître|comprendre|apprendre|tenir|recevoir|revenir|devenir|entrer|rentrer|retourner|passer"],
+    ["Reflexive routines", "se lever|se laver|s'habiller|se coucher|se réveiller|se reposer|se préparer|se promener|s'appeler|s'intéresser|s'occuper|s'amuser|se dépêcher|se rencontrer|se tromper|se sentir|habiller|coucher|réveiller|reposer|promener|amuser|rencontrer"],
+    ["More irregular families", "devoir|croire|falloir|pleuvoir|sentir|servir|découvrir|obtenir|retenir|permettre|promettre|remettre|décrire|inscrire|reconnaître|conduire|construire|mourir|naître|monter|tomber|arriver|souffrir"],
+    ["Abstract and professional verbs", "développer|améliorer|analyser|comparer|effectuer|imaginer|publier|réaliser|respecter|agir|réagir|considérer|déclarer|observer|fournir|exprimer|établir|réfléchir|préciser|fonctionner|coûter|occuper|regretter"],
+    ["Advanced patterns and nuance", "confondre|craindre|étendre|fondre|hésiter|paraître|peindre|plaire|prétendre|rejoindre|résoudre|rire|se demander|se parler|se rappeler|se souvenir|supporter|surprendre|valoir|investir|accomplir|garantir|définir"],
+  ].map(([title, names], index) => ({ id: index + 1, title, verbs: split(names) }));
+  const levelByVerb = new Map(levels.flatMap((level) => level.verbs.map((name) => [name, level.id])));
+  verbs.forEach((verb) => { verb.level = levelByVerb.get(verb.infinitive); });
+  return { subjects, imperativeSubjects: ["Tu", "Nous", "Vous"], tenses, categories, topics, levels, verbs };
 })();

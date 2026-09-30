@@ -150,6 +150,10 @@ input[type="checkbox"] {
   margin-top: 0;
 }
 
+.session-hint {
+  margin-top: 16px;
+}
+
 #settings-error {
   color: #a32222;
 }
@@ -222,6 +226,17 @@ button.secondary {
 
 button.secondary:hover {
   background: #d9e2d9;
+}
+
+.copy-next {
+  flex-shrink: 0;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+
+button.copy-next:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 footer {

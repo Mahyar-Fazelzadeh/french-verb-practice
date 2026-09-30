@@ -9,6 +9,8 @@ const tenseGroups = [];
 const verbChoices = [];
 const verbSearch = document.getElementById("verb-search");
 const topicFilter = document.getElementById("topic-filter");
+const practiceLevel = document.getElementById("practice-level");
+const exerciseCountSelect = document.getElementById("exercise-count");
 let session = null;
 const settingsScreen = document.getElementById("settings-screen");
 const practiceScreen = document.getElementById("practice-screen");
@@ -32,6 +34,10 @@ function exerciseSubjects(exercise) {
   return exercise.verb.impersonal ? ["Il"] : conjugationData.subjects;
 }
 
+function matchesLevel(verb, level) {
+  return !level || verb.level === Number(level);
+}
+
 function randomItem(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
@@ -47,6 +53,7 @@ function shuffle(items) {
 
 function startSession(settings) {
   const selectedVerbs = conjugationData.verbs.filter((verb) => settings.verbs.includes(verb.infinitive)
+    && matchesLevel(verb, settings.level)
     && settings.tenseIds.some((tense) => verb.conjugations[tense]));
   if (!selectedVerbs.length) {
     settingsError.textContent = "These verbs do not have forms in the selected tense(s). Choose another verb or tense. For example, pouvoir and falloir have no imperative.";
@@ -54,6 +61,7 @@ function startSession(settings) {
   }
   // Shuffle before taking the session limit so every selected verb has a chance.
   session = {
+    level: settings.level || "",
     exercises: shuffle(selectedVerbs).slice(0, settings.exerciseCount).map((verb) => ({
       verb,
       tenseId: randomItem(settings.tenseIds.filter((tense) => verb.conjugations[tense])),
@@ -84,6 +92,7 @@ function renderExercise() {
   answerSummary.textContent = "";
   const exercise = session.exercises[session.index];
   exerciseProgress.textContent = `Exercise ${session.index + 1} of ${session.exercises.length}`;
+  if (session.level) exerciseProgress.textContent += ` · Level ${session.level}`;
   exerciseHeading.textContent = `${exercise.verb.infinitive} — ${conjugationData.tenses[exercise.tenseId]}`;
   const instructions = exercise.tenseId === "imperatif"
     ? "Write the affirmative command without the subject. Include attached reflexive pronouns, for example lève-toi."
@@ -92,7 +101,8 @@ function renderExercise() {
   document.getElementById("verb-note").textContent = exercise.verb.note;
   answerFields.replaceChildren();
 
-  exerciseSubjects(exercise).forEach((subject, index) => {
+  const subjects = exerciseSubjects(exercise);
+  subjects.forEach((subject, index) => {
     const row = document.createElement("div");
     row.className = "answer-row";
     const label = document.createElement("label");
@@ -107,13 +117,40 @@ function renderExercise() {
     input.spellcheck = false;
     input.setAttribute("autocapitalize", "none");
     input.setAttribute("autocorrect", "off");
+    input.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || event.isComposing) return;
+      event.preventDefault();
+      if (!session || session.checked || event.repeat) return;
+      const target = index < subjects.length - 1
+        ? document.getElementById(`answer-${index + 1}`) : checkAnswers;
+      target.focus();
+    });
     const feedback = document.createElement("p");
     feedback.id = `feedback-${index}`;
     feedback.className = "answer-feedback";
     input.setAttribute("aria-describedby", `answer-instructions ${feedback.id}`);
     const answerContent = document.createElement("div");
     answerContent.className = "answer-content";
-    answerContent.append(input, feedback);
+    answerContent.append(input);
+    if (index < subjects.length - 1) {
+      const copyButton = document.createElement("button");
+      copyButton.type = "button";
+      copyButton.className = "secondary copy-next";
+      copyButton.textContent = "Copy to next";
+      copyButton.disabled = true;
+      copyButton.setAttribute("aria-label", `Copy ${subject} answer to ${subjects[index + 1]}`);
+      input.addEventListener("input", () => { copyButton.disabled = !input.value.trim(); });
+      copyButton.addEventListener("click", () => {
+        if (!session || session.checked || !input.value.trim()) return;
+        const nextInput = document.getElementById(`answer-${index + 1}`);
+        nextInput.value = input.value;
+        nextInput.dispatchEvent(new Event("input", { bubbles: true }));
+        nextInput.focus();
+        nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
+      });
+      answerContent.append(copyButton);
+    }
+    answerContent.append(feedback);
     row.append(label, answerContent);
     answerFields.append(row);
   });
@@ -164,6 +201,10 @@ answerForm.addEventListener("submit", (event) => {
   // Replace the previous attempt's result instead of counting retries twice.
   exercise.correctCount = correctCount;
   session.checked = true;
+  answerFields.querySelectorAll("button").forEach((button) => {
+    button.hidden = true;
+    button.disabled = true;
+  });
   checkAnswers.hidden = true;
   tryAgain.hidden = false;
   nextQuestion.hidden = false;
@@ -231,6 +272,8 @@ Object.entries(conjugationData.categories).forEach(([category, title]) => {
   const categoryVerbs = conjugationData.verbs.filter((verb) => verb.category === category);
   const toggle = addCheckbox(group, "category", category, `${title} (${categoryVerbs.length})`, true);
   toggle.parentElement.classList.add("group-label");
+  const titleNode = document.createElement("span");
+  toggle.parentElement.replaceChildren(toggle, titleNode);
   const options = document.createElement("div");
   options.className = "options";
   const checkboxes = categoryVerbs.map((verb) => {
@@ -240,30 +283,38 @@ Object.entries(conjugationData.categories).forEach(([category, title]) => {
   });
   group.append(options);
   verbOptions.append(group);
-  verbGroups.push({ group, toggle, checkboxes });
+  verbGroups.push({ group, toggle, checkboxes, category, title, titleNode });
 
   toggle.addEventListener("change", () => {
-    checkboxes.forEach((checkbox) => { checkbox.checked = toggle.checked; });
+    verbChoices.filter(({ verb }) => verb.category === category && matchesLevel(verb, practiceLevel.value))
+      .forEach(({ checkbox }) => { checkbox.checked = toggle.checked; });
   });
 });
 
 function updateSelection() {
-  [...verbGroups, ...tenseGroups].forEach(({ toggle, checkboxes }) => {
+  const inLevel = verbChoices.filter(({ verb }) => matchesLevel(verb, practiceLevel.value));
+  const activeGroups = verbGroups.map(({ toggle, category, title, titleNode }) => {
+    const checkboxes = inLevel.filter(({ verb }) => verb.category === category).map(({ checkbox }) => checkbox);
+    titleNode.textContent = `${title} (${checkboxes.length})`;
+    return { toggle, checkboxes };
+  });
+  [...activeGroups, ...tenseGroups].forEach(({ toggle, checkboxes }) => {
     const count = checkboxes.filter((checkbox) => checkbox.checked).length;
-    toggle.checked = count === checkboxes.length;
+    toggle.checked = checkboxes.length > 0 && count === checkboxes.length;
     toggle.indeterminate = count > 0 && count < checkboxes.length;
   });
   settingsError.textContent = "";
-  const selected = verbChoices.filter(({ checkbox }) => checkbox.checked).length;
+  const selected = inLevel.filter(({ checkbox }) => checkbox.checked).length;
   const shown = verbChoices.filter(({ checkbox }) => !checkbox.parentElement.hidden).length;
-  document.getElementById("selection-status").textContent = `${selected} of ${verbChoices.length} verbs selected · ${shown} shown${shown ? "" : " — no matches"}.`;
+  const scope = practiceLevel.value ? ` in Level ${practiceLevel.value}` : " across all levels";
+  document.getElementById("selection-status").textContent = `${selected} of ${inLevel.length} verbs selected${scope} · ${shown} shown${shown ? "" : " — no matches"}.`;
 }
 
 function filterVerbs() {
   const searchKey = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replaceAll("’", "'");
   const query = searchKey(verbSearch.value.trim());
   verbChoices.forEach(({ verb, checkbox }) => {
-    checkbox.parentElement.hidden = !searchKey(verb.infinitive).includes(query)
+    checkbox.parentElement.hidden = !matchesLevel(verb, practiceLevel.value) || !searchKey(verb.infinitive).includes(query)
       || (topicFilter.value !== "" && !verb.topics.includes(topicFilter.value));
   });
   verbGroups.forEach(({ group, checkboxes }) => { group.hidden = checkboxes.every((checkbox) => checkbox.parentElement.hidden); });
@@ -276,6 +327,14 @@ Object.entries(conjugationData.topics).forEach(([id, label]) => {
   option.textContent = label;
   topicFilter.append(option);
 });
+conjugationData.levels.forEach((level) => {
+  const option = document.createElement("option");
+  option.value = String(level.id);
+  option.textContent = `Level ${level.id} — ${level.title} (${level.verbs.length} verbs)`;
+  practiceLevel.append(option);
+});
+practiceLevel.value = "1";
+practiceLevel.addEventListener("change", filterVerbs);
 verbSearch.addEventListener("input", filterVerbs);
 topicFilter.addEventListener("change", filterVerbs);
 settingsForm.addEventListener("change", updateSelection);
@@ -285,19 +344,25 @@ for (const [id, checked, visibleOnly] of [["select-shown", true, true], ["clear-
     updateSelection();
   });
 }
-updateSelection();
+filterVerbs();
 
 settingsForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const selected = new FormData(settingsForm);
   const tenseIds = selected.getAll("tense");
-  const verbs = selected.getAll("verb");
+  const verbs = verbChoices.filter(({ verb, checkbox }) => checkbox.checked && matchesLevel(verb, practiceLevel.value))
+    .map(({ verb }) => verb.infinitive);
+  const exerciseCount = Number(exerciseCountSelect.value);
   settingsError.textContent = "";
 
   if (!tenseIds.length || !verbs.length) {
-    settingsError.textContent = "Select at least one tense and one verb before starting.";
+    settingsError.textContent = "Select at least one tense and one verb in the chosen level before starting.";
     return;
   }
 
-  startSession({ tenseIds, verbs, exerciseCount: 10 });
+  if (![3, 5, 10].includes(exerciseCount)) {
+    settingsError.textContent = "Choose 3, 5, or 10 questions per session.";
+    return;
+  }
+  startSession({ tenseIds, verbs, exerciseCount, level: practiceLevel.value });
 });
