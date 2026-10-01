@@ -3,54 +3,63 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>French Verb Practice</title>
+    <title data-i18n="title">French Verb Practice</title>
     <link rel="stylesheet" href="styles.css">
     <script src="data.js" defer></script>
+    <script src="i18n.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
     <main>
+      <div class="language-bar">
+        <button id="language-toggle" class="secondary" type="button" aria-label="Passer en français" title="Passer en français" aria-pressed="false">
+          <span aria-hidden="true">🌐</span> <span id="language-en" lang="en" class="active-language">EN</span> / <span id="language-fr" lang="fr">FR</span>
+        </button>
+      </div>
       <p class="eyebrow" lang="fr">Un peu de français, chaque jour</p>
-      <h1>French Verb Practice</h1>
-      <p>Practise French conjugations, one verb at a time.</p>
+      <h1 data-i18n="title">French Verb Practice</h1>
+      <p data-i18n="intro">Practise French conjugations, one verb at a time.</p>
 
       <section id="settings-screen" aria-labelledby="settings-heading">
-        <h2 id="settings-heading">Practice settings</h2>
-        <p>Choose a practice level, session length, and at least one tense and verb.</p>
-        <p class="hint">Verbs are shuffled with no repeats. Each exercise uses one of your selected tenses: six subjects, three for the imperative, or just il for impersonal verbs. Unavailable verb/tense combinations are skipped.</p>
+        <h2 id="settings-heading" data-i18n="settings">Practice settings</h2>
+        <p data-i18n="choose">Choose a practice level, session length, and at least one tense and verb.</p>
+        <p class="hint" data-i18n="randomHint">Verbs are shuffled with no repeats. Each exercise uses one of your selected tenses: six subjects, three for the imperative, or just il for impersonal verbs. Unavailable verb/tense combinations are skipped.</p>
         <form id="settings-form">
           <fieldset>
-            <legend>Session</legend>
+            <legend data-i18n="session">Session</legend>
             <div class="verb-filters">
-              <label for="practice-level">Practice level<select id="practice-level" name="level"><option value="">All levels</option></select></label>
-              <label for="exercise-count">Questions per session<select id="exercise-count" name="exerciseCount"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option></select></label>
+              <label for="practice-level"><span data-i18n="level">Practice level</span><select id="practice-level" name="level"><option value="" data-i18n="allLevels">All levels</option></select></label>
+              <label for="exercise-count"><span data-i18n="length">Questions per session</span><select id="exercise-count" name="exerciseCount"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option></select></label>
             </div>
-            <p class="session-hint">A question is one verb with its subject fields. Only verbs from the chosen level can appear. Fewer eligible verbs means a shorter session without repeats.</p>
-            <p class="hint">These are practice levels, not CEFR grades. Start with Level 1 and move on when ready. Tenses are chosen separately; no levels are locked.</p>
+            <p class="session-hint" data-i18n="sessionHint">A question is one verb with its subject fields. Only verbs from the chosen level can appear. Fewer eligible verbs means a shorter session without repeats.</p>
+            <p class="hint" data-i18n="recentHint">Verbs shown in this browser are skipped for one hour, across levels and tenses. Try Again still repeats the current exercise.</p>
+            <p id="recent-history-status" class="hint" role="status"></p>
+            <button id="clear-recent-history" type="button" class="secondary" data-i18n="clearRecent">Clear recent verb history</button>
+            <p class="hint" data-i18n="levelHint">These are practice levels, not CEFR grades. Start with Level 1 and move on when ready. Tenses are chosen separately; no levels are locked.</p>
           </fieldset>
           <fieldset>
-            <legend>Tenses</legend>
+            <legend data-i18n="tenses">Tenses</legend>
             <div id="tense-options"></div>
           </fieldset>
           <fieldset>
-            <legend>Verbs</legend>
-            <p class="hint">Group checkboxes affect verbs in the chosen level, including those hidden by search or topic. Search and topic filters only change what you see; hidden selections within the level can still appear in practice.</p>
+            <legend data-i18n="verbs">Verbs</legend>
+            <p class="hint" data-i18n="groupHint">Group checkboxes affect verbs in the chosen level, including those hidden by search or topic. Search and topic filters only change what you see; hidden selections within the level can still appear in practice.</p>
             <div class="verb-filters">
-              <label for="verb-search">Search verbs<input id="verb-search" type="search" placeholder="e.g. être, prendre, se…"></label>
-              <label for="topic-filter">Topic<select id="topic-filter"><option value="">All topics</option></select></label>
+              <label for="verb-search"><span data-i18n="search">Search verbs</span><input id="verb-search" type="search" placeholder="e.g. être, prendre, se…"></label>
+              <label for="topic-filter"><span data-i18n="topic">Topic</span><select id="topic-filter"><option value="" data-i18n="allTopics">All topics</option></select></label>
             </div>
             <div class="actions">
-              <button id="select-shown" class="secondary" type="button">Select shown</button>
-              <button id="clear-shown" class="secondary" type="button">Clear shown</button>
-              <button id="clear-all" class="secondary" type="button">Clear all verbs</button>
+              <button id="select-shown" class="secondary" type="button" data-i18n="selectShown">Select shown</button>
+              <button id="clear-shown" class="secondary" type="button" data-i18n="clearShown">Clear shown</button>
+              <button id="clear-all" class="secondary" type="button" data-i18n="clearAll">Clear all verbs</button>
             </div>
             <p id="selection-status" role="status"></p>
             <div id="verb-options"></div>
           </fieldset>
-          <button type="submit">Start Practice</button>
+          <button type="submit" data-i18n="start">Start Practice</button>
           <p id="settings-error" role="alert"></p>
         </form>
-        <noscript>Please enable JavaScript in your browser to use this app.</noscript>
+        <noscript>Please enable JavaScript / Veuillez activer JavaScript dans votre navigateur.</noscript>
       </section>
 
       <section id="practice-screen" aria-labelledby="exercise-heading" hidden>
@@ -58,32 +67,32 @@
         <h2 id="exercise-heading" tabindex="-1" lang="fr"></h2>
         <p id="answer-instructions">Type the verb form only, without the subject. Include the auxiliary for compound tenses (for example, ai parlé).</p>
         <p id="verb-note" class="hint"></p>
-        <p class="hint">Accents and spelling matter. Capitalization and spaces at the beginning or end are ignored.</p>
-        <p class="hint">Copy to next replaces the next subject’s answer with your text. Edit it as needed for that subject.</p>
+        <p class="hint" data-i18n="accents">Accents and spelling matter. Capitalization and spaces at the beginning or end are ignored.</p>
+        <p class="hint" data-i18n="copyHint">Copy to next replaces the next subject’s answer with your text. Edit it as needed for that subject.</p>
         <form id="answer-form">
           <div id="answer-fields"></div>
           <p id="answer-summary" role="status" tabindex="-1"></p>
           <div class="actions">
-            <button id="check-answers" type="submit">Check Answers</button>
-            <button id="try-again" type="button" hidden>Try Again</button>
-            <button id="next-question" type="button" hidden>Next Question</button>
-            <button id="leave-practice" class="secondary" type="button">Back to settings</button>
+            <button id="check-answers" type="submit" data-i18n="check">Check Answers</button>
+            <button id="try-again" type="button" hidden data-i18n="retry">Try Again</button>
+            <button id="next-question" type="button" hidden data-i18n="next">Next Question</button>
+            <button id="leave-practice" class="secondary" type="button" data-i18n="back">Back to settings</button>
           </div>
         </form>
       </section>
 
       <section id="complete-screen" aria-labelledby="complete-heading" hidden>
-        <h2 id="complete-heading" tabindex="-1">Session complete</h2>
+        <h2 id="complete-heading" tabindex="-1" data-i18n="complete">Session complete</h2>
         <p id="session-results"></p>
         <ul>
-          <li>✓ Correct answers: <strong id="correct-total"></strong></li>
-          <li>✗ Incorrect answers: <strong id="incorrect-total"></strong></li>
+          <li><span data-i18n="correct">✓ Correct answers: </span><strong id="correct-total"></strong></li>
+          <li><span data-i18n="incorrect">✗ Incorrect answers: </span><strong id="incorrect-total"></strong></li>
         </ul>
-        <p class="hint">Each subject counts as one answer. Results use your latest checked attempt for each exercise; blank answers count as incorrect.</p>
-        <button id="return-settings" type="button">Back to settings</button>
+        <p class="hint" data-i18n="scoreHint">Every checked attempt counts, including retries. Each subject counts as one answer; blank answers count as incorrect. Earlier mistakes remain in your results.</p>
+        <button id="return-settings" type="button" data-i18n="back">Back to settings</button>
       </section>
 
-      <footer>Works offline. Session progress is not saved when you close or refresh the page.</footer>
+      <footer data-i18n="footer">Works offline. Session progress is not saved when you close or refresh the page.</footer>
     </main>
   </body>
 </html>

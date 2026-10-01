@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 const read = (file) => fs.readFileSync(new URL(file, import.meta.url), "utf8");
 const dataSource = read("data.js");
 const appSource = read("app.js");
+const i18nSource = read("i18n.js");
 const html = read("index.html");
 new vm.Script(appSource);
 const data = vm.runInNewContext(`${dataSource}; conjugationData`);
@@ -83,6 +84,7 @@ class Element {
   append(...children) { for (let node of children) { if (typeof node === "string") { const text = new Element("text"); text.textContent = node; node = text; } node.parentElement = this; this.children.push(node); } }
   replaceChildren(...children) { this.children = []; this.append(...children); }
   setAttribute(name, value) { this.attributes[name] = value; }
+  getAttribute(name) { return this.attributes[name]; }
   addEventListener(type, fn) { this.listeners[type] = fn; }
   fire(type) { this.listeners[type]?.({ preventDefault() {} }); if (type === "change") this.parentElement?.fire(type); }
   dispatchEvent(event) { this.fire(event.type); }
@@ -94,16 +96,32 @@ class Element {
 }
 for (const match of html.matchAll(/id="([^"]+)"/g)) { const node = new Element(); node.id = match[1]; }
 const node = (id) => nodes.get(id);
+const translatedNodes = [];
+for (const match of html.matchAll(/<[^>]+data-i18n="([^"]+)"[^>]*>/g)) {
+  const id = match[0].match(/\bid="([^"]+)"/);
+  const element = id ? node(id[1]) : new Element();
+  element.setAttribute("data-i18n", match[1]);
+  translatedNodes.push(element);
+}
 const settings = node("settings-form");
 assert.ok(html.includes('<option value="5" selected>5</option>'));
 node("exercise-count").value = "5"; // Simulate the HTML-selected option.
 settings.append(node("tense-options"), node("verb-options"), new Element("button"));
+let testNow = 1800000000000;
+const storage = new Map();
+let storageBlocked = false;
 const context = vm.createContext({
+  Date: class extends Date { static now() { return testNow; } },
+  localStorage: {
+    getItem(key) { if (storageBlocked) throw new Error("Blocked"); return storage.get(key) ?? null; },
+    setItem(key, value) { if (storageBlocked) throw new Error("Blocked"); storage.set(key, value); },
+    removeItem(key) { if (storageBlocked) throw new Error("Blocked"); storage.delete(key); },
+  },
   Event: class { constructor(type) { this.type = type; } },
-  document: { getElementById: node, createElement: (tag) => new Element(tag), createTextNode: (text) => { const n = new Element("text"); n.textContent = text; return n; } },
+  document: { documentElement: {}, querySelectorAll: () => translatedNodes, getElementById: node, createElement: (tag) => new Element(tag), createTextNode: (text) => { const n = new Element("text"); n.textContent = text; return n; } },
   FormData: class { constructor(form) { this.form = form; } getAll(name) { return this.form.querySelectorAll("input").filter((input) => input.name === name && input.checked).map((input) => input.value); } },
 });
-vm.runInContext(dataSource + "\n" + appSource, context);
+vm.runInContext(dataSource + "\n" + i18nSource + "\n" + appSource, context);
 const run = (code) => vm.runInContext(code, context);
 assert.equal(settings.querySelectorAll("input").filter((i) => i.name === "verb").length, data.verbs.length);
 assert.equal(node("practice-level").value, "1");
@@ -117,6 +135,7 @@ for (const level of data.levels) {
   node("practice-level").value = String(level.id); node("practice-level").fire("change");
   for (const length of [3, 5, 10]) {
     node("exercise-count").value = String(length);
+    run("clearRecentHistory()");
     settings.fire("submit");
     assert.equal(run("session.exercises.length"), length);
     assert.ok(run(`session.exercises.every(e => e.verb.level === ${level.id})`));
@@ -131,6 +150,7 @@ assert.ok(run("verbChoices.filter(({checkbox}) => checkbox.checked).every(({verb
 node("practice-level").value = "2"; node("practice-level").fire("change");
 settings.fire("submit");
 assert.ok(node("settings-error").textContent.includes("chosen level"));
+run("clearRecentHistory()");
 // A shorter eligible pool must not be padded with duplicates or outside verbs.
 node("select-shown").fire("click");
 run("verbChoices.forEach(({checkbox,verb}) => { checkbox.checked = ['laver','porter'].includes(verb.infinitive); })");
@@ -155,19 +175,19 @@ run("verbGroups[0].checkboxes[0].checked = false; updateSelection()");
 assert.ok(run("verbGroups[0].toggle.indeterminate"));
 node("clear-all").fire("click"); settings.fire("submit");
 assert.ok(node("settings-error").textContent.includes("Select at least"));
-run("startSession({verbs:['falloir','pouvoir'],tenseIds:['imperatif'],exerciseCount:10})");
+run("clearRecentHistory(); startSession({verbs:['falloir','pouvoir'],tenseIds:['imperatif'],exerciseCount:10})");
 assert.ok(node("settings-error").textContent.includes("do not have forms"));
 const orders = new Set();
 for (let i = 0; i < 50; i++) {
-  run("startSession({verbs:conjugationData.verbs.map(v=>v.infinitive),tenseIds:['imperatif','present'],exerciseCount:10})");
+  run("clearRecentHistory(); startSession({verbs:conjugationData.verbs.map(v=>v.infinitive),tenseIds:['imperatif','present'],exerciseCount:10})");
   assert.equal(run("session.exercises.length"), 10);
   assert.equal(run("new Set(session.exercises.map(e=>e.verb.infinitive)).size"), 10);
   assert.ok(run("session.exercises.every(e=>e.verb.conjugations[e.tenseId])"));
   orders.add(run("session.exercises.map(e=>e.verb.infinitive).join(',')"));
 }
 assert.ok(orders.size > 1);
-// Mixed 6/3/1-field session; retry replaces the prior score.
-run("startSession({verbs:['être','aller','falloir'],tenseIds:['present'],exerciseCount:10}); session.exercises = [{verb:conjugationData.verbs.find(v=>v.infinitive==='être'),tenseId:'imparfait',correctCount:0},{verb:conjugationData.verbs.find(v=>v.infinitive==='aller'),tenseId:'imperatif',correctCount:0},{verb:conjugationData.verbs.find(v=>v.infinitive==='falloir'),tenseId:'present',correctCount:0}]; renderExercise()");
+// Mixed 6/3/1-field session; each checked retry retains its own score.
+run("clearRecentHistory(); startSession({verbs:['être','aller','falloir'],tenseIds:['present'],exerciseCount:10}); session.exercises = [{verb:conjugationData.verbs.find(v=>v.infinitive==='être'),tenseId:'imparfait',correctCount:0},{verb:conjugationData.verbs.find(v=>v.infinitive==='aller'),tenseId:'imperatif',correctCount:0},{verb:conjugationData.verbs.find(v=>v.infinitive==='falloir'),tenseId:'present',correctCount:0}]; renderExercise()");
 node("answer-0").value = "etais"; node("answer-1").value = "étais";
 node("answer-form").fire("submit");
 assert.equal(run("session.exercises[0].correctCount"), 1);
@@ -182,10 +202,11 @@ node("answer-form").fire("submit"); node("next-question").fire("click");
 assert.equal(node("answer-fields").querySelectorAll("input").length, 1);
 node("answer-0").value = "faut";
 node("answer-form").fire("submit"); node("next-question").fire("click");
-assert.equal(node("correct-total").textContent, "8");
-assert.equal(node("incorrect-total").textContent, "2");
+assert.equal(node("correct-total").textContent, "9");
+assert.equal(node("incorrect-total").textContent, "7");
+assert.ok(node("session-results").textContent.includes("Checked attempts: 4. Answers checked: 16."));
 assert.equal(run("session"), null);
-run("startSession({verbs:['se lever'],tenseIds:['passeCompose'],exerciseCount:10})");
+run("clearRecentHistory(); startSession({verbs:['se lever'],tenseIds:['passeCompose'],exerciseCount:10})");
 node("answer-0").value = "me suis levée";
 node("answer-1").value = "t’es levé";
 node("answer-form").fire("submit");
@@ -193,7 +214,7 @@ assert.equal(run("session.exercises[0].correctCount"), 2);
 assert.equal(run("normalizeAnswer('etais') === normalizeAnswer('étais')"), false);
 assert.equal(run("normalizeAnswer('e\\u0301tais') === normalizeAnswer('étais')"), true);
 // Copy preserves the exact text, replaces only the next field, and never submits.
-run("startSession({verbs:['parler'],tenseIds:['present'],exerciseCount:5})");
+run("clearRecentHistory(); startSession({verbs:['parler'],tenseIds:['present'],exerciseCount:5})");
 let copies = node("answer-fields").querySelectorAll("button");
 assert.equal(copies.length, 5); // No button after the last subject.
 assert.ok(copies.every((button) => button.disabled && button.type === "button"));
@@ -223,13 +244,13 @@ assert.equal(copies.length, 5);
 assert.ok(copies.every((button) => !button.hidden && button.disabled));
 node("answer-0").value = "m’étais levée"; node("answer-0").fire("input"); copies[0].fire("click");
 assert.equal(node("answer-1").value, "m’étais levée");
-run("startSession({verbs:['aller'],tenseIds:['imperatif'],exerciseCount:3})");
+run("clearRecentHistory(); startSession({verbs:['aller'],tenseIds:['imperatif'],exerciseCount:3})");
 assert.equal(node("answer-fields").querySelectorAll("button").length, 2);
-run("startSession({verbs:['falloir'],tenseIds:['present'],exerciseCount:3})");
+run("clearRecentHistory(); startSession({verbs:['falloir'],tenseIds:['present'],exerciseCount:3})");
 assert.equal(node("answer-fields").querySelectorAll("button").length, 0);
 // Enter navigates fields without submitting, including 3- and 1-field exercises.
 for (const [verb, tense, length] of [['parler', 'present', 6], ['aller', 'imperatif', 3], ['falloir', 'present', 1]]) {
-  run(`startSession({verbs:[${JSON.stringify(verb)}],tenseIds:[${JSON.stringify(tense)}],exerciseCount:3})`);
+  run(`clearRecentHistory(); startSession({verbs:[${JSON.stringify(verb)}],tenseIds:[${JSON.stringify(tense)}],exerciseCount:3})`);
   for (let i = 0; i < length; i++) {
     const target = i < length - 1 ? node(`answer-${i + 1}`) : node('check-answers');
     target.focused = false;
@@ -240,4 +261,124 @@ for (const [verb, tense, length] of [['parler', 'present', 6], ['aller', 'impera
     assert.equal(run('session.checked'), false);
   }
 }
-console.log(`Passed: ${data.verbs.length} verbs in 10 balanced levels, 3/5/10-question sessions, ${formCount} answer slots, ${cases.length} reference forms, filters, selection, random sessions, agreement, retries, mixed-length scoring, copy-to-next, and Enter navigation. Rendering is not covered.`);
+// Both languages cover every static key and every stored usage note.
+assert.ok(run("Object.values(messages).every(pair => pair.length === 2 && pair.every(text => typeof text === 'string' && text.length))"));
+assert.ok(run("conjugationData.verbs.every(verb => !verb.note || frenchNotes[verb.note])"));
+for (const element of translatedNodes) assert.ok(run(`messages[${JSON.stringify(element.getAttribute('data-i18n'))}]`));
+node('leave-practice').fire('click');
+const savedSelection = run("verbChoices.map(({checkbox})=>checkbox.checked).join(',')");
+run("setSettingsError('chooseRequired')");
+node('language-toggle').fire('click');
+assert.equal(run('language'), 'fr');
+assert.equal(run('document.documentElement.lang'), 'fr');
+assert.equal(node('check-answers').textContent, 'Vérifier les réponses');
+assert.ok(node('settings-error').textContent.includes('Sélectionnez'));
+assert.ok(run("levelOptions[0].option.textContent.includes('Niveau 1')"));
+assert.ok(run("topicOptions[0].option.textContent.includes('Vie quotidienne')"));
+assert.equal(run("verbChoices.map(({checkbox})=>checkbox.checked).join(',')"), savedSelection);
+node('language-toggle').fire('click');
+assert.ok(node('settings-error').textContent.includes('Select at least'));
+run("clearRecentHistory(); startSession({verbs:['se lever'],tenseIds:['passeCompose'],exerciseCount:3})");
+const savedField = node('answer-0');
+savedField.value = 'me suis levée'; savedField.fire('input');
+node('language-toggle').fire('click');
+assert.equal(node('answer-0'), savedField);
+assert.equal(savedField.value, 'me suis levée');
+assert.ok(node('verb-note').textContent.includes('Emploi pronominal'));
+assert.equal(node('answer-fields').querySelectorAll('button')[0].textContent, 'Copier ↓');
+assert.equal(run('session.checked'), false);
+node('answer-form').fire('submit');
+const savedFeedback = node('feedback-0').textContent;
+assert.ok(node('answer-summary').textContent.startsWith('1 réponse(s) correcte(s) sur 6'));
+assert.equal(node('next-question').textContent, 'Terminer la séance');
+node('language-toggle').fire('click');
+assert.equal(node('answer-0'), savedField);
+assert.equal(savedField.readOnly, true);
+assert.equal(node('feedback-0').textContent, savedFeedback);
+assert.equal(run('session.exercises[0].correctCount'), 1);
+assert.equal(node('next-question').textContent, 'Finish Session');
+assert.ok(node('answer-fields').querySelectorAll('button').every(button=>button.hidden));
+node('next-question').fire('click');
+node('language-toggle').fire('click');
+assert.equal(node('complete-heading').textContent, 'Séance terminée');
+assert.equal(node('session-results').textContent, 'Exercices terminés : 1. Tentatives vérifiées : 1. Réponses vérifiées : 6.');
+assert.equal(node('correct-total').textContent, '1');
+assert.equal(node('incorrect-total').textContent, '5');
+node('language-toggle').fire('click');
+assert.equal(node('complete-heading').textContent, 'Session complete');
+// Reproduce the reported bug: six mistakes followed by a perfect retry and
+// two perfect exercises must remain 18 correct + 6 incorrect, not 18 + 0.
+run("clearRecentHistory(); startSession({verbs:['parler','aimer','habiter'],tenseIds:['present'],exerciseCount:3})");
+assert.equal(run('session.attempts.length'), 0);
+node('answer-form').fire('submit');
+assert.equal(run('session.attempts.length'), 1);
+node('answer-form').fire('submit'); // Repeated submit after checking is ignored.
+assert.equal(run('session.attempts.length'), 1);
+node('try-again').fire('click');
+assert.equal(run('session.attempts.length'), 1);
+for (let i = 0; i < 3; i++) {
+  const expected = run('session.exercises[session.index].verb.conjugations.present');
+  expected.forEach((variants, j) => { node(`answer-${j}`).value = variants[0]; });
+  node('answer-form').fire('submit'); node('next-question').fire('click');
+}
+assert.equal(node('correct-total').textContent, '18');
+assert.equal(node('incorrect-total').textContent, '6');
+assert.equal(node('session-results').textContent, 'Exercises completed: 3. Checked attempts: 4. Answers checked: 24.');
+node('language-toggle').fire('click');
+assert.ok(node('session-results').textContent.includes('Tentatives vérifiées : 4. Réponses vérifiées : 24.'));
+assert.equal(node('incorrect-total').textContent, '6');
+run("clearRecentHistory(); startSession({verbs:['parler'],tenseIds:['present'],exerciseCount:3})");
+assert.equal(run('session.attempts.length'), 0);
+console.log(`Passed: ${data.verbs.length} verbs in 10 balanced levels, session lengths, ${formCount} answer slots, ${cases.length} reference forms, filters, scoring, copying, Enter navigation, and EN/FR switching without losing selections, answers, feedback, or results. Rendering is not covered.`);
+
+// One-hour history uses actual displayed verbs, survives page reload, and expires.
+run("language = 'en'; clearRecentHistory(); returnToSettings()");
+const allSettings = "({verbs:conjugationData.verbs.map(v=>v.infinitive),tenseIds:['present'],exerciseCount:3})";
+run("startSession" + allSettings);
+const firstRound = Array.from(run("session.exercises.map(e=>e.verb.infinitive)"));
+assert.equal(run("Object.keys(readRecentVerbs()).length"), 1); // Future questions aren't remembered.
+for (let i = 0; i < 3; i++) {
+  node("answer-form").fire("submit");
+  node("next-question").fire("click");
+}
+assert.equal(run("Object.keys(readRecentVerbs()).length"), 3);
+run("returnToSettings(); startSession" + allSettings);
+assert.ok(run("session.exercises").every(e => !firstRound.includes(e.verb.infinitive)));
+run("returnToSettings(); recentVerbs = {}"); // Reload discards the in-memory cache.
+assert.equal(run("Object.keys(readRecentVerbs()).length"), 4);
+const freshContext = vm.createContext({
+  document: context.document, Event: context.Event, FormData: context.FormData,
+  Date: context.Date, localStorage: context.localStorage,
+});
+vm.runInContext(dataSource + "\n" + i18nSource + "\n" + appSource, freshContext);
+assert.equal(vm.runInContext("Object.keys(readRecentVerbs()).length", freshContext), 4);
+// Restore event handlers to the main context after the reload test.
+vm.runInContext("document.getElementById('clear-recent-history').addEventListener('click', clearRecentHistory)", context);
+run("clearRecentHistory(); rememberVerb('parler')");
+testNow += 60 * 60 * 1000 - 1;
+assert.ok(run("Object.hasOwn(readRecentVerbs(), 'parler')"));
+testNow += 1;
+assert.equal(run("Object.keys(readRecentVerbs()).length"), 0);
+run("rememberVerb('parler'); returnToSettings(); startSession({verbs:['parler'],tenseIds:['imparfait'],exerciseCount:3})");
+assert.equal(run("session"), null);
+assert.equal(run("settingsErrorKey"), "recentExhausted");
+run("startSession({verbs:['parler','aimer'],tenseIds:['present'],exerciseCount:3})");
+assert.equal(run("session.exercises.length"), 1);
+assert.equal(run("session.exercises[0].verb.infinitive"), "aimer");
+node("clear-recent-history").fire("click");
+assert.equal(run("Object.keys(readRecentVerbs()).length"), 0);
+const historyKey = run("recentHistoryKey");
+storage.set(historyKey, "{bad json");
+assert.equal(run("Object.keys(readRecentVerbs()).length"), 0);
+storage.set(historyKey, JSON.stringify({parler:testNow + 1, aimer:"invalid", unknown:testNow}));
+assert.equal(run("Object.keys(readRecentVerbs()).length"), 0);
+storageBlocked = true;
+run("rememberVerb('parler'); refreshRecentHistory()");
+assert.equal(run("historyStorageAvailable"), false);
+assert.ok(run("Object.hasOwn(readRecentVerbs(), 'parler')"));
+assert.ok(node("recent-history-status").textContent.includes("storage is unavailable"));
+run("returnToSettings(); startSession({verbs:['parler'],tenseIds:['present'],exerciseCount:3})");
+assert.equal(run("session"), null);
+run("clearRecentHistory()");
+assert.equal(run("Object.keys(readRecentVerbs()).length"), 0);
+console.log("Passed: history excludes previous rounds across tenses, records only shown verbs, survives reload, expires at one hour, shortens/exhausts pools, clears, and handles corrupt or blocked storage.");

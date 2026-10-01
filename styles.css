@@ -23,6 +23,25 @@ main {
   padding: 56px 20px;
 }
 
+.language-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+#language-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+}
+
+.active-language {
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .eyebrow {
   color: #456759;
   font-weight: 600;

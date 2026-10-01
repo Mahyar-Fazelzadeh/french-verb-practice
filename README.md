@@ -1,6 +1,8 @@
 # French Verb Practice
 
-Open `index.html` in a modern browser. No installation, server, or internet connection is needed. Keep the four app files in the same folder.
+Open `index.html` in a modern browser. No installation, server, or internet connection is needed. Keep the five app files (`index.html`, `styles.css`, `data.js`, `i18n.js`, and `app.js`) in the same folder.
+
+Use the globe **EN / FR** button at the top right to switch the interface between English and French. All instructions, settings, categories, level titles, validation, and results switch languages. Current selections, answers, and scores are preserved. Verb forms and tense names always stay in French. A refresh returns the interface to English.
 
 ## How to practise
 
@@ -9,8 +11,10 @@ Open `index.html` in a modern browser. No installation, server, or internet conn
 3. Click **Start Practice** for the chosen session length using only selected verbs from the chosen level. Verbs are shuffled with no repeats. Fewer eligible verbs give a shorter session. Only available tenses are used: pouvoir, falloir, and pleuvoir have no imperative in the dataset.
 4. Enter verb forms without subject pronouns or `que/qu’`. Include auxiliaries and reflexive pronouns, such as `ai parlé`, `me suis levée`, or `lève-toi`. Ordinary exercises have six fields; imperative exercises have tu/nous/vous; impersonal verbs have only il.
 5. Press **Enter** in an answer field to move to the next subject without copying or checking. Enter on the last subject focuses **Check Answers**; click it or press Enter again to check. Accents and spelling matter. Capitalization, surrounding whitespace, equivalent Unicode accents, and straight/curly apostrophes are normalized. Explicitly stored spelling variants are accepted; accents are never removed generally. Blank answers are incorrect.
-6. Review the feedback: green answer text and ✓, or red text followed by X and accepted corrections. **Try Again** clears the same exercise; **Next Question** advances. **Finish Session** shows correct/incorrect totals. Each displayed subject counts once, using the latest checked attempt. Retries replace the previous result. Totals account for mixed six-, three-, and one-field exercises.
-7. **Back to settings** ends the session and keeps your selections while the page remains open. Refreshing or closing the page resets everything.
+6. Review the feedback: green answer text and ✓, or red text followed by X and accepted corrections. **Try Again** clears the same exercise; **Next Question** advances. **Finish Session** shows completed exercises, checked attempts, and correct/incorrect answer totals. Every checked attempt counts, including retries, so earlier mistakes remain. Clicking Try Again without checking does not add an attempt. Three six-subject exercises plus one checked retry total four attempts and 24 answers. Totals account for mixed six-, three-, and one-field exercises.
+7. **Back to settings** ends the session and keeps your selections while the page remains open. Refreshing or closing the page resets the session and settings, but recent verb history remains in this browser.
+
+**One-hour verb history:** Each displayed verb is remembered locally in this browser for one hour after its latest display, including across refreshes. New sessions exclude these verbs across tenses and levels. Unseen questions are not recorded. Try Again still repeats the current exercise. If too few eligible verbs remain, the session is shorter; if none remain, choose more verbs, wait, or use **Clear recent verb history**. History contains only verb names and timestamps, with no account or server; it is not shared across devices or browser profiles. If browser storage is blocked, history lasts only while the page stays open. Expired entries are ignored when history is read.
 
 **Copy to next** beside an answer copies exactly what you typed into the next subject's field, replacing its contents and placing the cursor at the end. Adjust the ending or pronoun yourself; the button does not conjugate for you or use the system clipboard. Empty fields cannot be copied. There is no button on the final subject; buttons disappear after checking and return on Try Again.
 
@@ -50,6 +54,7 @@ Gender is unspecified, so valid masculine/feminine agreement is accepted. Nous a
 - `styles.css`: layout and feedback styling, including small screens.
 - `data.js`: local principal parts, deterministic conjugation patterns, exceptions, agreement variants, and category/topic labels.
 - `app.js`: selection, random sessions, answer checking, and navigation.
+- `i18n.js`: English/French interface strings and usage-note translations; no translation service or network requests.
 - `verify.mjs`: optional developer regression checks. With Node.js installed, run `node verify.mjs`; Node is not needed to use the app.
 
 ## Editing the data
@@ -74,10 +79,11 @@ Check new derivatives carefully: prefixes can change the auxiliary, participle, 
 - Check `etais` versus `étais`, a blank answer, and a correct answer: feedback should distinguish them and retain what you typed.
 - Try Again should keep the exercise number, verb, and tense while clearing answers and feedback.
 - Check and advance through the session, verify the final correct/incorrect totals, then return and start a fresh session with no old results.
-- Select more than ten verbs and choose 10 questions: the session should contain ten different verbs in shuffled order. Try Again should not add an extra exercise or double-count answers.
+- Select more than ten verbs and choose 10 questions: the session should contain ten different verbs in shuffled order. Try Again keeps the same exercise; each checked retry adds one attempt and its answers to the totals.
 - Select multiple tenses and verbs: questions must stay within the selection.
 - At a narrow browser width, check that inputs and feedback fit without horizontal scrolling. Use Tab and Enter to verify keyboard access.
 - Try se lever in the imperative (three fields), aller in passé composé (agreement variants), and falloir in the present (one field). Check final totals for each.
 - Filter/search and verify hidden selections remain selected. Try selecting only pouvoir plus imperative: the app should explain that this combination is unavailable.
 - Check the default Level 1 and 5-question session. Try 3 and 10 questions and another level: every generated verb must belong to that level. Choose All levels to practise the full collection. Deselect all verbs within the current level: selections in other levels must not bypass validation.
 - Enter parle for Je and click Copy to next: Tu receives parle and is focused for editing. Change it to parles and copy onward. Check that copying does not submit, buttons disappear after checking, and Try Again restores them. Imperative exercises have two copy buttons; impersonal exercises have none.
+- Switch EN/FR in settings, while typing, after checking, and on the completion screen. All interface text should translate without clearing answers, changing selections, or resetting results. Check the translated layout at a narrow width.

@@ -12,6 +12,10 @@ const topicFilter = document.getElementById("topic-filter");
 const practiceLevel = document.getElementById("practice-level");
 const exerciseCountSelect = document.getElementById("exercise-count");
 let session = null;
+let lastResults = null;
+let settingsErrorKey = "";
+const topicOptions = [];
+const levelOptions = [];
 const settingsScreen = document.getElementById("settings-screen");
 const practiceScreen = document.getElementById("practice-screen");
 const completeScreen = document.getElementById("complete-screen");
@@ -23,6 +27,112 @@ const answerForm = document.getElementById("answer-form");
 const checkAnswers = document.getElementById("check-answers");
 const tryAgain = document.getElementById("try-again");
 const answerSummary = document.getElementById("answer-summary");
+
+const recentHistoryKey = "french-verb-practice.recent-verbs.v1";
+const recentHistoryLifetime = 60 * 60 * 1000;
+let recentVerbs = {};
+let historyStorageAvailable = true;
+
+function readRecentVerbs() {
+  const now = Date.now();
+  if (historyStorageAvailable) {
+    try {
+      const raw = localStorage.getItem(recentHistoryKey);
+      try { recentVerbs = JSON.parse(raw || "{}"); }
+      catch { recentVerbs = {}; }
+    } catch { historyStorageAvailable = false; }
+  }
+  if (!recentVerbs || typeof recentVerbs !== "object" || Array.isArray(recentVerbs)) recentVerbs = {};
+  const known = new Set(conjugationData.verbs.map(verb => verb.infinitive));
+  recentVerbs = Object.fromEntries(Object.entries(recentVerbs).filter(([verb, time]) =>
+    known.has(verb) && typeof time === "number" && Number.isFinite(time)
+    && time <= now && now - time < recentHistoryLifetime));
+  return recentVerbs;
+}
+
+function refreshRecentHistory() {
+  const count = Object.keys(readRecentVerbs()).length;
+  document.getElementById("recent-history-status").textContent = t(
+    historyStorageAvailable ? "recentStatus" : "recentFallback", { count });
+  document.getElementById("clear-recent-history").disabled = count === 0;
+}
+
+function rememberVerb(verb) {
+  readRecentVerbs();
+  recentVerbs[verb] = Date.now();
+  if (historyStorageAvailable) {
+    try { localStorage.setItem(recentHistoryKey, JSON.stringify(recentVerbs)); }
+    catch { historyStorageAvailable = false; }
+  }
+}
+
+function clearRecentHistory() {
+  recentVerbs = {};
+  if (historyStorageAvailable) {
+    try { localStorage.removeItem(recentHistoryKey); }
+    catch { historyStorageAvailable = false; }
+  }
+  setSettingsError();
+  refreshRecentHistory();
+}
+
+document.getElementById("clear-recent-history").addEventListener("click", clearRecentHistory);
+
+function setSettingsError(key = "") {
+  settingsErrorKey = key;
+  settingsError.textContent = key ? t(key) : "";
+}
+
+function refreshExerciseText() {
+  if (!session) return;
+  const exercise = session.exercises[session.index];
+  exerciseProgress.textContent = t("progress", { current: session.index + 1, total: session.exercises.length })
+    + (session.level ? t("levelSuffix", { level: session.level }) : "");
+  exerciseHeading.textContent = `${exercise.verb.infinitive} — ${conjugationData.tenses[exercise.tenseId]}`;
+  document.getElementById("answer-instructions").textContent = t(exercise.tenseId === "imperatif" ? "imperativeHelp" : "answerHelp");
+  document.getElementById("verb-note").textContent = language === "fr" ? frenchNotes[exercise.verb.note] || "" : exercise.verb.note;
+  const isLast = session.index === session.exercises.length - 1;
+  nextQuestion.textContent = t(isLast ? "finish" : "next");
+  if (session.checked) answerSummary.textContent = t("checked", {
+    correct: exercise.correctCount, total: exerciseSubjects(exercise).length,
+    action: t(isLast ? "finishAction" : "nextAction"),
+  });
+  const subjects = exerciseSubjects(exercise);
+  answerFields.querySelectorAll("button").forEach((button, i) => {
+    button.textContent = t("copy");
+    button.setAttribute("aria-label", t("copyLabel", { from: subjects[i], to: subjects[i + 1] }));
+  });
+}
+
+function applyLanguage() {
+  document.documentElement.lang = language;
+  document.title = t("title");
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = t(element.getAttribute("data-i18n"));
+  });
+  verbSearch.placeholder = t("searchPlaceholder");
+  topicOptions.forEach(({ option, id }) => { option.textContent = t(id); });
+  levelOptions.forEach(({ option, level }) => {
+    option.textContent = t("levelOption", { level: level.id, title: t(`level${level.id}`), count: level.verbs.length });
+  });
+  const toggle = document.getElementById("language-toggle");
+  const switchLabel = language === "en" ? "Passer en français" : "Switch to English";
+  toggle.setAttribute("aria-label", switchLabel);
+  toggle.setAttribute("title", switchLabel);
+  toggle.setAttribute("aria-pressed", String(language === "fr"));
+  document.getElementById("language-en").className = language === "en" ? "active-language" : "";
+  document.getElementById("language-fr").className = language === "fr" ? "active-language" : "";
+  updateSelection(false);
+  setSettingsError(settingsErrorKey);
+  refreshExerciseText();
+  refreshRecentHistory();
+  if (lastResults) renderResultsText();
+}
+
+document.getElementById("language-toggle").addEventListener("click", () => {
+  language = language === "en" ? "fr" : "en";
+  applyLanguage();
+});
 
 function normalizeAnswer(answer) {
   // NFC treats equivalent Unicode accents alike without removing accents.
@@ -56,13 +166,23 @@ function startSession(settings) {
     && matchesLevel(verb, settings.level)
     && settings.tenseIds.some((tense) => verb.conjugations[tense]));
   if (!selectedVerbs.length) {
-    settingsError.textContent = "These verbs do not have forms in the selected tense(s). Choose another verb or tense. For example, pouvoir and falloir have no imperative.";
+    setSettingsError("noForms");
     return;
   }
+  const recent = readRecentVerbs();
+  const availableVerbs = selectedVerbs.filter(verb => !Object.hasOwn(recent, verb.infinitive));
+  refreshRecentHistory();
+  if (!availableVerbs.length) {
+    setSettingsError("recentExhausted");
+    return;
+  }
+  setSettingsError();
   // Shuffle before taking the session limit so every selected verb has a chance.
+  lastResults = null;
   session = {
     level: settings.level || "",
-    exercises: shuffle(selectedVerbs).slice(0, settings.exerciseCount).map((verb) => ({
+    attempts: [],
+    exercises: shuffle(availableVerbs).slice(0, settings.exerciseCount).map((verb) => ({
       verb,
       tenseId: randomItem(settings.tenseIds.filter((tense) => verb.conjugations[tense])),
       correctCount: 0,
@@ -77,11 +197,16 @@ function startSession(settings) {
 
 function showResults() {
   const exerciseCount = session.exercises.length;
-  const total = session.exercises.reduce((sum, exercise) => sum + exerciseSubjects(exercise).length, 0);
-  const correct = session.exercises.reduce((sum, exercise) => sum + exercise.correctCount, 0);
-  document.getElementById("session-results").textContent = `You completed ${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} and answered ${total} conjugations.`;
+  const total = session.attempts.reduce((sum, attempt) => sum + attempt.total, 0);
+  const correct = session.attempts.reduce((sum, attempt) => sum + attempt.correct, 0);
+  lastResults = { count: exerciseCount, attempts: session.attempts.length, total };
+  renderResultsText();
   document.getElementById("correct-total").textContent = String(correct);
   document.getElementById("incorrect-total").textContent = String(total - correct);
+}
+
+function renderResultsText() {
+  document.getElementById("session-results").textContent = t("results", lastResults);
 }
 
 function renderExercise() {
@@ -91,14 +216,7 @@ function renderExercise() {
   nextQuestion.hidden = true;
   answerSummary.textContent = "";
   const exercise = session.exercises[session.index];
-  exerciseProgress.textContent = `Exercise ${session.index + 1} of ${session.exercises.length}`;
-  if (session.level) exerciseProgress.textContent += ` · Level ${session.level}`;
-  exerciseHeading.textContent = `${exercise.verb.infinitive} — ${conjugationData.tenses[exercise.tenseId]}`;
-  const instructions = exercise.tenseId === "imperatif"
-    ? "Write the affirmative command without the subject. Include attached reflexive pronouns, for example lève-toi."
-    : "Write the verb form without the subject or que/qu’. Include auxiliaries and reflexive pronouns, for example ai parlé or me suis levée. Where the subject allows it, masculine/feminine forms are accepted; vous may be singular or plural.";
-  document.getElementById("answer-instructions").textContent = instructions;
-  document.getElementById("verb-note").textContent = exercise.verb.note;
+  rememberVerb(exercise.verb.infinitive);
   answerFields.replaceChildren();
 
   const subjects = exerciseSubjects(exercise);
@@ -136,9 +254,9 @@ function renderExercise() {
       const copyButton = document.createElement("button");
       copyButton.type = "button";
       copyButton.className = "secondary copy-next";
-      copyButton.textContent = "Copy to next";
+      copyButton.textContent = t("copy");
       copyButton.disabled = true;
-      copyButton.setAttribute("aria-label", `Copy ${subject} answer to ${subjects[index + 1]}`);
+      copyButton.setAttribute("aria-label", t("copyLabel", { from: subject, to: subjects[index + 1] }));
       input.addEventListener("input", () => { copyButton.disabled = !input.value.trim(); });
       copyButton.addEventListener("click", () => {
         if (!session || session.checked || !input.value.trim()) return;
@@ -155,7 +273,7 @@ function renderExercise() {
     answerFields.append(row);
   });
 
-  nextQuestion.textContent = session.index === session.exercises.length - 1 ? "Finish Session" : "Next Question";
+  refreshExerciseText();
   exerciseHeading.focus();
 }
 
@@ -198,7 +316,8 @@ answerForm.addEventListener("submit", (event) => {
     }
   });
 
-  // Replace the previous attempt's result instead of counting retries twice.
+  // Preserve every checked attempt; the latest score is used for row feedback.
+  session.attempts.push({ correct: correctCount, total: correctForms.length });
   exercise.correctCount = correctCount;
   session.checked = true;
   answerFields.querySelectorAll("button").forEach((button) => {
@@ -208,8 +327,7 @@ answerForm.addEventListener("submit", (event) => {
   checkAnswers.hidden = true;
   tryAgain.hidden = false;
   nextQuestion.hidden = false;
-  const nextAction = session.index === session.exercises.length - 1 ? "finish the session" : "move to the next exercise";
-  answerSummary.textContent = `${correctCount} of ${correctForms.length} correct. Try again or ${nextAction}.`;
+  refreshExerciseText();
   answerSummary.focus();
 });
 
@@ -225,6 +343,7 @@ function returnToSettings() {
   practiceScreen.hidden = true;
   completeScreen.hidden = true;
   settingsScreen.hidden = false;
+  refreshRecentHistory();
   settingsForm.querySelector('button[type="submit"]').focus();
 }
 
@@ -291,11 +410,11 @@ Object.entries(conjugationData.categories).forEach(([category, title]) => {
   });
 });
 
-function updateSelection() {
+function updateSelection(clearError = true) {
   const inLevel = verbChoices.filter(({ verb }) => matchesLevel(verb, practiceLevel.value));
   const activeGroups = verbGroups.map(({ toggle, category, title, titleNode }) => {
     const checkboxes = inLevel.filter(({ verb }) => verb.category === category).map(({ checkbox }) => checkbox);
-    titleNode.textContent = `${title} (${checkboxes.length})`;
+    titleNode.textContent = `${t(category)} (${checkboxes.length})`;
     return { toggle, checkboxes };
   });
   [...activeGroups, ...tenseGroups].forEach(({ toggle, checkboxes }) => {
@@ -303,11 +422,11 @@ function updateSelection() {
     toggle.checked = checkboxes.length > 0 && count === checkboxes.length;
     toggle.indeterminate = count > 0 && count < checkboxes.length;
   });
-  settingsError.textContent = "";
+  if (clearError) setSettingsError();
   const selected = inLevel.filter(({ checkbox }) => checkbox.checked).length;
   const shown = verbChoices.filter(({ checkbox }) => !checkbox.parentElement.hidden).length;
-  const scope = practiceLevel.value ? ` in Level ${practiceLevel.value}` : " across all levels";
-  document.getElementById("selection-status").textContent = `${selected} of ${inLevel.length} verbs selected${scope} · ${shown} shown${shown ? "" : " — no matches"}.`;
+  const scope = practiceLevel.value ? t("levelScope", { level: practiceLevel.value }) : t("allScope");
+  document.getElementById("selection-status").textContent = t("selection", { selected, total: inLevel.length, scope, shown, empty: shown ? "" : t("noMatches") });
 }
 
 function filterVerbs() {
@@ -326,12 +445,14 @@ Object.entries(conjugationData.topics).forEach(([id, label]) => {
   option.value = id;
   option.textContent = label;
   topicFilter.append(option);
+  topicOptions.push({ option, id });
 });
 conjugationData.levels.forEach((level) => {
   const option = document.createElement("option");
   option.value = String(level.id);
   option.textContent = `Level ${level.id} — ${level.title} (${level.verbs.length} verbs)`;
   practiceLevel.append(option);
+  levelOptions.push({ option, level });
 });
 practiceLevel.value = "1";
 practiceLevel.addEventListener("change", filterVerbs);
@@ -353,16 +474,18 @@ settingsForm.addEventListener("submit", (event) => {
   const verbs = verbChoices.filter(({ verb, checkbox }) => checkbox.checked && matchesLevel(verb, practiceLevel.value))
     .map(({ verb }) => verb.infinitive);
   const exerciseCount = Number(exerciseCountSelect.value);
-  settingsError.textContent = "";
+  setSettingsError();
 
   if (!tenseIds.length || !verbs.length) {
-    settingsError.textContent = "Select at least one tense and one verb in the chosen level before starting.";
+    setSettingsError("chooseRequired");
     return;
   }
 
   if (![3, 5, 10].includes(exerciseCount)) {
-    settingsError.textContent = "Choose 3, 5, or 10 questions per session.";
+    setSettingsError("chooseLength");
     return;
   }
   startSession({ tenseIds, verbs, exerciseCount, level: practiceLevel.value });
 });
+
+applyLanguage();
