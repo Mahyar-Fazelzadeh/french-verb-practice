@@ -279,3 +279,89 @@ footer {
   }
 
 }
+
+/* Home module choices; existing practice layouts retain their styles. */
+.module-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 16px;
+}
+
+.module-choices section {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+
+.module-choices button {
+  margin-top: auto;
+  width: 100%;
+}
+
+/* Pronoun reference only: native disclosures work with keyboard and touch. */
+#pronouns-module .pronouns-jump {
+  display: inline-block;
+  padding: 10px 0;
+}
+#pronouns-module a { color: #23533f; }
+#pronouns-module a:focus-visible,
+#pronouns-module summary:focus-visible {
+  outline: 3px solid #235dc4;
+  outline-offset: 4px;
+}
+.pronouns-reference details {
+  border-top: 1px solid #dce3dc;
+  padding: 12px 0;
+}
+.pronouns-reference summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 8px 0;
+}
+.pronouns-reference .pronouns-example {
+  padding: 12px;
+  background: #f5f6f2;
+  border-left: 3px solid #82958b;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+#pronouns-module h2 { scroll-margin-top: 20px; }
+
+#pronouns-module .pronouns-example {
+  padding: 12px;
+  background: #f5f6f2;
+  overflow-wrap: anywhere;
+}
+#pronouns-sentence mark {
+  background: #fff0b3;
+  color: #20312d;
+  text-decoration: underline;
+}
+.pronouns-answer-line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+#pronouns-answer {
+  flex: 1 1 260px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #82958b;
+  border-radius: 6px;
+  background: white;
+  font: inherit;
+  color: #20312d;
+}
+#pronouns-feedback { flex: 1 1 180px; overflow-wrap: anywhere; }
+#pronouns-feedback:empty, #pronouns-error:empty { display: none; }
+#pronouns-answer.pronoun-correct, #pronouns-feedback.pronoun-correct { color: #21603f; }
+#pronouns-answer.pronoun-incorrect, #pronouns-feedback.pronoun-incorrect, #pronouns-error { color: #a32222; }
+
+/* Keep long translated controls and corrections inside narrow screens. */
+#pronouns-module .verb-filters > label { min-width: 0; }
+#pronouns-module .verb-filters select { max-width: 100%; }
+#pronouns-module .actions > button { max-width: 100%; white-space: normal; }
+#pronouns-module h1, #pronouns-module h3, #pronouns-targets { overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  #pronouns-module .actions > button { flex: 1 1 100%; }
+  #pronouns-answer, #pronouns-feedback { flex-basis: 100%; }
+}

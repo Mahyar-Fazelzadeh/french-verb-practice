@@ -1,8 +1,18 @@
 # French Verb Practice
 
-Open `index.html` in a modern browser. No installation, server, or internet connection is needed. Keep the five app files (`index.html`, `styles.css`, `data.js`, `i18n.js`, and `app.js`) in the same folder.
+Open `index.html` in a modern browser. No installation, server, or internet connection is needed. Keep the app files (`index.html`, `styles.css`, `data.js`, `pronouns-data.js`, `i18n.js`, `app.js`, `navigation.js`, and `pronouns.js`) in the same folder.
 
 Use the globe **EN / FR** button at the top right to switch the interface between English and French. All instructions, settings, categories, level titles, validation, and results switch languages. Current selections, answers, and scores are preserved. Verb forms and tense names always stay in French. A refresh returns the interface to English.
+
+The home screen offers **Conjugaison** and **Pronoms compléments**. Pronoun grammar and category practice are available in EN/FR. The initial static bank and expansion contract are documented in [PRONOUNS-DATA.md](PRONOUNS-DATA.md).
+
+## Pronoun practice
+
+Open **Pronoms compléments**, read the reference or choose **Go to exercises**, then select COD, COI, y, en, combinations or **Mixed practice**, a difficulty, and 3, 5 or 10 questions (default 5). All difficulties is the default. Each individual category currently contains eight questions across the difficulty bands; mixed practice draws from all eligible categories. The live count shows how many questions match and the actual session length. Sentences are shuffled without duplicates within a session; later sessions can reuse questions. Pronoun practice does not use or change conjugation verb history.
+
+Rewrite the full sentence, replacing only the highlighted words (also listed below the sentence). Keep the subject, tense, meaning and quantities. Checking locks the answer and shows green text with ✓ or red text with X and the accepted correction, followed by an explanation. **Try Again** clears the same question; every checked attempt remains in the totals. **Next Question** advances; **Finish session** shows sentence-level correct/incorrect counts.
+
+Case, whitespace, curly/straight apostrophes and an optional final full stop are normalized. Accents, internal punctuation and command hyphens remain significant. Blank answers are incorrect. EN/FR switching and home/module navigation preserve the current session. **Back to pronoun settings** ends it; refreshing also resets it. The grammar reference returns when you return to settings. Choose **1 · Basic replacements**, **2 · Placement and combinations**, **3 · Agreement and commands**, or **All difficulties**. Each numbered band selects exactly that difficulty, rather than including easier questions. These are adjustable practice bands, not CEFR levels, and none is locked. An empty selection (currently combinations at difficulty 1) explains how to choose another pool. Mixed mode hides the required grammatical category before checking, reveals it with feedback, and hides it again on retry. Mixed sessions are randomly sampled from the eligible pool; not every session necessarily contains every category. No mastery score or automatic level advancement is implied.
 
 ## How to practise
 
