@@ -22,16 +22,16 @@
       <p class="eyebrow" lang="fr">Un peu de français, chaque jour</p>
       <div id="home-screen" aria-labelledby="home-heading">
         <h1 id="home-heading" tabindex="-1" data-i18n="homeTitle">French Practice</h1>
-        <p data-i18n="homeIntro">Choose what you would like to practise.</p>
+        <p data-i18n="homeIntro">Choose a practice module.</p>
         <div class="module-choices">
           <section aria-labelledby="conjugation-choice-heading">
             <h2 id="conjugation-choice-heading" lang="fr">Conjugaison</h2>
-            <p data-i18n="conjugationDescription">Practise verb conjugations with your choice of levels and tenses.</p>
+            <p data-i18n="conjugationDescription">Practise verbs and tenses.</p>
             <button id="open-conjugation" type="button" data-i18n="openConjugation">Open conjugation practice</button>
           </section>
           <section aria-labelledby="pronouns-choice-heading">
             <h2 id="pronouns-choice-heading" lang="fr">Pronoms compléments</h2>
-            <p data-i18n="pronounsDescription">Explore French object pronouns: COD, COI, y, en, and combinations.</p>
+            <p data-i18n="pronounsDescription">Practise COD, COI, y, en and combinations.</p>
             <button id="open-pronouns" type="button" data-i18n="openPronouns">Open object pronouns</button>
           </section>
         </div>
@@ -44,8 +44,7 @@
 
       <section id="settings-screen" aria-labelledby="settings-heading">
         <h2 id="settings-heading" data-i18n="settings">Practice settings</h2>
-        <p data-i18n="choose">Choose a practice level, session length, and at least one tense and verb.</p>
-        <p class="hint" data-i18n="randomHint">Verbs are shuffled with no repeats. Each exercise uses one of your selected tenses: six subjects, three for the imperative, or just il for impersonal verbs. Unavailable verb/tense combinations are skipped.</p>
+        <p data-i18n="choose">Choose a level, session length, tenses and verbs.</p>
         <form id="settings-form">
           <fieldset>
             <legend data-i18n="session">Session</legend>
@@ -53,11 +52,11 @@
               <label for="practice-level"><span data-i18n="level">Practice level</span><select id="practice-level" name="level"><option value="" data-i18n="allLevels">All levels</option></select></label>
               <label for="exercise-count"><span data-i18n="length">Questions per session</span><select id="exercise-count" name="exerciseCount"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option></select></label>
             </div>
-            <p class="session-hint" data-i18n="sessionHint">A question is one verb with its subject fields. Only verbs from the chosen level can appear. Fewer eligible verbs means a shorter session without repeats.</p>
-            <p class="hint" data-i18n="recentHint">Verbs shown in this browser are skipped for one hour, across levels and tenses. Try Again still repeats the current exercise.</p>
+            <p class="session-hint" data-i18n="sessionHint">One question = one verb. Fewer available verbs means a shorter session.</p>
+            <p class="hint" data-i18n="recentHint">Seen verbs are skipped for one hour in this browser. Retry still works.</p>
             <p id="recent-history-status" class="hint" role="status"></p>
             <button id="clear-recent-history" type="button" class="secondary" data-i18n="clearRecent">Clear recent verb history</button>
-            <p class="hint" data-i18n="levelHint">These are practice levels, not CEFR grades. Start with Level 1 and move on when ready. Tenses are chosen separately; no levels are locked.</p>
+            <p class="hint" data-i18n="levelHint">Start at Level 1. These are practice levels, not CEFR levels.</p>
           </fieldset>
           <fieldset>
             <legend data-i18n="tenses">Tenses</legend>
@@ -65,7 +64,7 @@
           </fieldset>
           <fieldset>
             <legend data-i18n="verbs">Verbs</legend>
-            <p class="hint" data-i18n="groupHint">Group checkboxes affect verbs in the chosen level, including those hidden by search or topic. Search and topic filters only change what you see; hidden selections within the level can still appear in practice.</p>
+            <p class="hint" data-i18n="groupHint">Search and topic filters hide verbs without deselecting them. Groups select all verbs in the chosen level.</p>
             <div class="verb-filters">
               <label for="verb-search"><span data-i18n="search">Search verbs</span><input id="verb-search" type="search" placeholder="e.g. être, prendre, se…"></label>
               <label for="topic-filter"><span data-i18n="topic">Topic</span><select id="topic-filter"><option value="" data-i18n="allTopics">All topics</option></select></label>
@@ -86,10 +85,11 @@
       <section id="practice-screen" aria-labelledby="exercise-heading" hidden>
         <p id="exercise-progress"></p>
         <h2 id="exercise-heading" tabindex="-1" lang="fr"></h2>
+        <p id="verb-meaning" class="hint" lang="en"></p>
         <p id="answer-instructions">Type the verb form only, without the subject. Include the auxiliary for compound tenses (for example, ai parlé).</p>
         <p id="verb-note" class="hint"></p>
-        <p class="hint" data-i18n="accents">Accents and spelling matter. Capitalization and spaces at the beginning or end are ignored.</p>
-        <p class="hint" data-i18n="copyHint">Copy to next replaces the next subject’s answer with your text. Edit it as needed for that subject.</p>
+        <p class="hint" data-i18n="accents">Keep accents and correct spelling.</p>
+        <p class="hint" data-i18n="copyHint">Copy to the next subject, then adjust the ending.</p>
         <form id="answer-form">
           <div id="answer-fields"></div>
           <p id="answer-summary" role="status" tabindex="-1"></p>
@@ -109,7 +109,7 @@
           <li><span data-i18n="correct">✓ Correct answers: </span><strong id="correct-total"></strong></li>
           <li><span data-i18n="incorrect">✗ Incorrect answers: </span><strong id="incorrect-total"></strong></li>
         </ul>
-        <p class="hint" data-i18n="scoreHint">Every checked attempt counts, including retries. Each subject counts as one answer; blank answers count as incorrect. Earlier mistakes remain in your results.</p>
+        <p class="hint" data-i18n="scoreHint">Each subject counts once per checked attempt. Retries keep earlier mistakes; blanks are incorrect.</p>
         <button id="return-settings" type="button" data-i18n="back">Back to settings</button>
       </section>
 
@@ -118,65 +118,62 @@
       <div id="pronouns-module" hidden>
         <button id="pronouns-home" class="secondary" type="button" data-i18n="homeBack">Back to home</button>
         <h1 id="pronouns-heading" tabindex="-1" lang="fr">Les pronoms compléments</h1>
-<p data-i18n="pronounsGuideIntro">Use this quick reference before practising. Open a topic to review its rules and examples.</p>
+<p data-i18n="pronounsGuideIntro">Review a topic or go straight to exercises.</p>
         <a class="pronouns-jump" href="#pronouns-exercises-heading" data-i18n="pronounsSkip">Go to exercises</a>
         <section id="pronouns-reference" class="pronouns-reference" aria-labelledby="pronouns-reference-heading">
         <h2 id="pronouns-reference-heading" tabindex="-1" data-i18n="pronounsReference">Quick grammar reference</h2>
         <details open>
         <summary data-i18n="pronounsCod">1. Direct objects (COD)</summary>
-        <p data-i18n="pronounsCodUse">A direct object is linked to the verb without a preposition: whom or what? These pronouns replace people or things; le/la/les refer to identified objects.</p>
-        <p data-i18n="pronounsCodForms">Forms: me, te, le, la, nous, vous, les. Me/te refer to the speaker/listener; nous/vous to us/you. Le is masculine singular, la feminine singular, and les plural.</p>
-        <p class="pronouns-example" lang="fr">Je regarde le film. → Je le regarde.
-Elle invite ses amies. → Elle les invite.</p>
-        <p data-i18n="pronounsCodRule">Before a vowel or silent h: me → m’, te → t’, le/la → l’. With avoir, a preceding COD normally makes the past participle agree: Cette lettre, je l’ai écrite.</p>
+        <p data-i18n="pronounsCodUse">COD: a person or thing linked to the verb without a preposition.</p>
+        <p data-i18n="pronounsCodForms">me, te, le (masculine), la (feminine), nous, vous, les (plural).</p>
+        <p class="pronouns-example" lang="fr">Je regarde le film. → Je le regarde.</p>
+        <p data-i18n="pronounsCodRule">Before a vowel or silent h: m’, t’, l’. With avoir, agree with a preceding COD: Cette lettre, je l’ai écrite.</p>
         </details>
         <details>
         <summary data-i18n="pronounsCoi">2. Indirect objects (COI)</summary>
-        <p data-i18n="pronounsCoiUse">With verbs such as parler à, téléphoner à and donner à, replace à + person with an indirect-object pronoun.</p>
-        <p data-i18n="pronounsCoiForms">Forms: me, te, lui, nous, vous, leur. Lui means to him or to her; leur means to them and never takes an s as a pronoun. Me/te become m’/t’ before a vowel or silent h.</p>
-        <p class="pronouns-example" lang="fr">Je téléphone à Nora. → Je lui téléphone.
-Il parle aux voisins. → Il leur parle.</p>
-        <p data-i18n="pronounsCoiRule">Check the verb’s construction: not every à + person becomes lui/leur. Say Je pense à elle. A COI does not trigger past-participle agreement: Je lui ai parlé.</p>
+        <p data-i18n="pronounsCoiUse">Replace à + person with verbs such as parler à or téléphoner à.</p>
+        <p data-i18n="pronounsCoiForms">me, te, lui (to him/her), nous, vous, leur (to them, never leurs).</p>
+        <p class="pronouns-example" lang="fr">Je téléphone à Nora. → Je lui téléphone.</p>
+        <p data-i18n="pronounsCoiRule">Not every à becomes lui: Je pense à elle. No participle agreement with a COI: Je lui ai parlé.</p>
         </details>
         <details>
         <summary data-i18n="pronounsY">3. The pronoun y</summary>
-        <p data-i18n="pronounsYUse">Y often replaces a destination or location (à, dans, chez…) or à + thing/idea. It can mean there or to/about it, depending on the verb.</p>
+        <p data-i18n="pronounsYUse">Y replaces a location or à + thing/idea.</p>
         <p class="pronouns-example" lang="fr">Nous allons à la piscine. → Nous y allons.
 Tu réfléchis à ce problème. → Tu y réfléchis.</p>
-        <p data-i18n="pronounsYRule">For a person after penser à, use a stressed pronoun: Je pense à lui. For a place you come from, use en: Je reviens du bureau → J’en reviens.</p>
+        <p data-i18n="pronounsYRule">Person: Je pense à lui. Place of origin: J’en reviens.</p>
         </details>
         <details>
         <summary data-i18n="pronounsEn">4. The pronoun en</summary>
-        <p data-i18n="pronounsEnUse">En replaces de + thing/idea, an origin, or a noun introduced by du/de la/des or a quantity. It can mean some, of/about it, or from there.</p>
+        <p data-i18n="pronounsEnUse">En replaces de + thing/idea, an origin, or a quantity.</p>
         <p class="pronouns-example" lang="fr">Elle boit du lait. → Elle en boit.
 Je prends trois pommes. → J’en prends trois.
 Nous parlons du voyage. → Nous en parlons.</p>
-        <p data-i18n="pronounsEnRule">Keep the number or quantity: J’en prends deux / J’en veux beaucoup. For an identified person, de lui/d’elle is often clearer. When en itself is the COD, the past participle usually stays invariable: Des pommes, j’en ai acheté.</p>
+        <p data-i18n="pronounsEnRule">Keep the quantity: J’en prends deux. With en as COD, the participle usually stays unchanged: J’en ai acheté.</p>
         </details>
         <details>
         <summary data-i18n="pronounsCombined">5. Combined pronouns</summary>
-        <p data-i18n="pronounsCombinedUse">When replacing two complements of the same verb, choose each pronoun from its role, then put them in the correct order.</p>
         <p data-i18n="pronounsOrderLabel">Before the verb (except affirmative commands):</p>
         <p class="pronouns-example" lang="fr">me / te / se / nous / vous → le / la / les → lui / leur → y → en</p>
-        <p data-i18n="pronounsOrderRule">Read the groups from left to right; choose only the pronouns needed. This is an order guide, not permission to combine every form. Se is included for reflexive constructions.</p>
+        <p data-i18n="pronounsOrderRule">Read left to right; not all combinations are possible.</p>
         <p class="pronouns-example" lang="fr">Je donne le livre à Léa. → Je le lui donne.
 Je parle du projet à Paul. → Je lui en parle.
 Elle me prête sa voiture. → Elle me la prête.</p>
         </details>
         <details>
         <summary data-i18n="pronounsMixed">6. Mixed practice: choose for yourself</summary>
-        <p data-i18n="pronounsMixedUse">Mixed exercises will not reveal the required category. Identify the verb’s construction, the complement being replaced, and whether it refers to a person, thing, place or quantity. Then check order and agreement.</p>
-        <p data-i18n="pronounsMixedRule">Compare the meaning, not just the noun: Je vois Léa → Je la vois; Je parle à Léa → Je lui parle. Difficulty levels will be adjusted after the exercise content is reviewed.</p>
+        <p data-i18n="pronounsMixedUse">Choose the pronouns yourself, using the verb’s construction.</p>
+        <p data-i18n="pronounsMixedRule">Je vois Léa → Je la vois. Je parle à Léa → Je lui parle.</p>
         </details>
         <details>
         <summary data-i18n="pronounsPlacement">Sentence structure and important rules</summary>
-        <p data-i18n="pronounsPlacementBasic">Usually put the pronoun before the conjugated verb, or before the auxiliary in a compound tense.</p>
+        <p data-i18n="pronounsPlacementBasic">Before the verb or auxiliary.</p>
         <p class="pronouns-example" lang="fr">Je la vois. / Je l’ai vue.</p>
-        <p data-i18n="pronounsPlacementNegative">In a negative sentence, ne comes before the pronoun(s); pas follows the conjugated verb or auxiliary.</p>
+        <p data-i18n="pronounsPlacementNegative">ne + pronoun(s) + verb/auxiliary + pas.</p>
         <p class="pronouns-example" lang="fr">Je ne la vois pas. / Je ne l’ai pas vue.</p>
-        <p data-i18n="pronounsPlacementInfinitive">With an infinitive, put the object pronoun before the verb it belongs to.</p>
+        <p data-i18n="pronounsPlacementInfinitive">Before the infinitive they belong to.</p>
         <p class="pronouns-example" lang="fr">Je vais lui répondre. / Je veux le voir.</p>
-        <p data-i18n="pronounsPlacementCommand">Affirmative commands put pronouns after the verb with hyphens: le/la/les → moi/toi/lui/nous/vous/leur → y → en. Before en, moi/toi become m’/t’. Negative commands return to the usual order before the verb.</p>
+        <p data-i18n="pronounsPlacementCommand">Affirmative: after the verb, joined by hyphens. Before en, moi/toi → m’/t’. Negative: before the verb.</p>
         <p class="pronouns-example" lang="fr">Donne-le-lui. / Donne-m’en. / Vas-y.
 Ne le lui donne pas. / Ne m’en donne pas.</p>
         </details>
@@ -196,7 +193,6 @@ Ne le lui donne pas. / Ne m’en donne pas.</p>
         <section aria-labelledby="pronouns-exercises-heading">
         <h2 id="pronouns-exercises-heading" tabindex="-1" data-i18n="pronounsExercises">Exercises</h2>
         <div id="pronouns-settings">
-          <p data-i18n="pSettingsHint">Choose a category or Mixed practice, a difficulty, and 3, 5 or 10 questions. Questions are shuffled without repeats within a session. If fewer are available, the session is shorter.</p>
           <form id="pronouns-settings-form">
             <div class="verb-filters">
               <label for="pronouns-category"><span data-i18n="pCategory">Category</span>
@@ -221,8 +217,8 @@ Ne le lui donne pas. / Ne m’en donne pas.</p>
                 <select id="pronouns-length"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option></select>
               </label>
             </div>
-            <p class="hint" data-i18n="pDifficultyHint">Start with basic replacements, then practise placement and simple combinations, followed by agreement and commands. These adjustable practice bands are not CEFR levels; all are unlocked.</p>
-            <p class="hint" data-i18n="pMixedHint">Mixed practice draws from several categories. Identify the pronouns yourself; the category is revealed only after checking.</p>
+            <p class="hint" data-i18n="pDifficultyHint">Start at 1, then move up when ready. These are practice bands, not CEFR levels.</p>
+            <p class="hint" data-i18n="pMixedHint">Mixed: choose the pronouns without a category hint.</p>
             <p id="pronouns-available" role="status"></p>
             <div class="actions"><button type="submit" data-i18n="start">Start Practice</button></div>
             <p id="pronouns-error" role="alert"></p>
@@ -238,7 +234,7 @@ Ne le lui donne pas. / Ne m’en donne pas.</p>
           <p id="pronouns-targets"></p>
           <form id="pronouns-answer-form">
             <label for="pronouns-answer" data-i18n="pAnswerLabel">Your rewritten sentence</label>
-            <p id="pronouns-answer-hint" class="hint" data-i18n="pAnswerHint">Write the full sentence. Accents and hyphens matter. Capitalization, extra spaces, apostrophe style and the final full stop are ignored. Blank answers count as incorrect.</p>
+            <p id="pronouns-answer-hint" class="hint" data-i18n="pAnswerHint">Keep accents and hyphens. Capitals, extra spaces and the final dot are ignored.</p>
             <div class="pronouns-answer-line">
               <input id="pronouns-answer" type="text" lang="fr" autocomplete="off" spellcheck="false" autocapitalize="none" autocorrect="off" aria-describedby="pronouns-answer-hint pronouns-feedback">
               <span id="pronouns-feedback" lang="fr"></span>
@@ -256,14 +252,14 @@ Ne le lui donne pas. / Ne m’en donne pas.</p>
         <div id="pronouns-complete" hidden>
           <h3 id="pronouns-complete-heading" tabindex="-1" data-i18n="complete">Session complete</h3>
           <p id="pronouns-results"></p>
-          <p data-i18n="pScoreHint">Each checked sentence counts as one answer. All checked retries count, so earlier mistakes remain in the results.</p>
+          <p data-i18n="pScoreHint">Each checked sentence counts. Retries keep earlier mistakes; blanks are incorrect.</p>
           <button id="pronouns-return" type="button" data-i18n="pBack">Back to pronoun settings</button>
         </div>
         </section>
       </div>
 
       <noscript>Please enable JavaScript / Veuillez activer JavaScript dans votre navigateur.</noscript>
-      <footer data-i18n="footer">Works offline. Session progress is not saved when you close or refresh the page.</footer>
+      <footer data-i18n="footer">Works offline. Refreshing resets the session.</footer>
     </main>
   </body>
 </html>

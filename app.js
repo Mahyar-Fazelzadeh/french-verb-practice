@@ -89,6 +89,7 @@ function refreshExerciseText() {
   exerciseProgress.textContent = t("progress", { current: session.index + 1, total: session.exercises.length })
     + (session.level ? t("levelSuffix", { level: session.level }) : "");
   exerciseHeading.textContent = `${exercise.verb.infinitive} — ${conjugationData.tenses[exercise.tenseId]}`;
+  document.getElementById("verb-meaning").textContent = exercise.verb.english;
   document.getElementById("answer-instructions").textContent = t(exercise.tenseId === "imperatif" ? "imperativeHelp" : "answerHelp");
   document.getElementById("verb-note").textContent = language === "fr" ? frenchNotes[exercise.verb.note] || "" : exercise.verb.note;
   const isLast = session.index === session.exercises.length - 1;

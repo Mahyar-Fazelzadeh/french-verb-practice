@@ -6,8 +6,8 @@
 const pronounsData = {
   "schemaVersion": 1,
   "instructions": {
-    "en": "Rewrite the whole sentence, replacing only the marked words with pronouns. Keep the subject, tense and meaning, including any quantity. Make any necessary agreement changes.",
-    "fr": "Réécrivez toute la phrase en remplaçant uniquement les mots indiqués par des pronoms. Conservez le sujet, le temps et le sens, y compris les quantités. Faites les accords nécessaires."
+    "en": "Rewrite the sentence using pronouns for the marked words. Keep the tense, meaning and quantities; adjust agreement.",
+    "fr": "Remplacez les mots indiqués par des pronoms. Gardez le temps, le sens et les quantités ; adaptez les accords."
   },
   "categories": [
     "cod",

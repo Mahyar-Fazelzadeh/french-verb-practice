@@ -32,6 +32,7 @@ for (const level of data.levels) {
 }
 let formCount = 0;
 for (const verb of data.verbs) {
+  assert.ok(typeof verb.english === "string" && verb.english.trim().startsWith("to "), "Missing English meaning: " + verb.infinitive);
   assert.ok(data.categories[verb.category], verb.infinitive);
   assert.ok(verb.topics.length && verb.topics.every((topic) => data.topics[topic]));
   for (const tense of Object.keys(data.tenses)) {
@@ -178,6 +179,7 @@ assert.equal(run("verbChoices.filter(({checkbox}) => !checkbox.parentElement.hid
 settings.fire("submit");
 assert.equal(run("session.exercises.length"), 5);
 assert.ok(run("session.exercises.every(e => e.verb.level === 1)"));
+assert.equal(node("verb-meaning").textContent, run("session.exercises[session.index].verb.english"));
 node("leave-practice").fire("click");
 // Navigation must preserve selections, typed answers, retry scores and history.
 run("clearRecentHistory(); startSession({verbs:['parler'],tenseIds:['present'],exerciseCount:3})");
@@ -365,11 +367,13 @@ assert.equal(run("verbChoices.map(({checkbox})=>checkbox.checked).join(',')"), s
 node('language-toggle').fire('click');
 assert.ok(node('settings-error').textContent.includes('Select at least'));
 run("clearRecentHistory(); startSession({verbs:['se lever'],tenseIds:['passeCompose'],exerciseCount:3})");
+assert.equal(node("verb-meaning").textContent, "to get up");
 const savedField = node('answer-0');
 savedField.value = 'me suis levée'; savedField.fire('input');
 node('language-toggle').fire('click');
 assert.equal(node('answer-0'), savedField);
 assert.equal(savedField.value, 'me suis levée');
+assert.equal(node('verb-meaning').textContent, 'to get up');
 assert.ok(node('verb-note').textContent.includes('Emploi pronominal'));
 assert.equal(node('answer-fields').querySelectorAll('button')[0].textContent, 'Copier ↓');
 assert.equal(run('session.checked'), false);
